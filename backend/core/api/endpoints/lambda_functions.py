@@ -10,8 +10,12 @@ router = APIRouter()
 async def invoke_lambda_function(function_name: str, payload: dict = None):
     """Invoke an AWS Lambda function"""
     try:
-        response = await LambdaService.invoke_function(function_name, payload or {})
-        return MessageResponse(message=f"Lambda function {function_name} invoked successfully")
+        response = await LambdaService.invoke_function(
+            function_name, payload or {}
+        )
+        return MessageResponse(
+            message=f"Lambda function {function_name} invoked successfully"
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -31,6 +35,8 @@ async def deploy_lambda_function(function_name: str):
     """Deploy a Lambda function"""
     try:
         result = await LambdaService.deploy_function(function_name)
-        return MessageResponse(message=f"Lambda function {function_name} deployed successfully")
+        return MessageResponse(
+            message=f"Lambda function {function_name} deployed successfully"
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

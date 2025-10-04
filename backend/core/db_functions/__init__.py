@@ -16,9 +16,19 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import (
+    Session,
+    declarative_base,
+    relationship,
+    sessionmaker,
+)
 
-from .queries import BaseRepository, filter_by_fields, order_by_field, search_by_text
+from .queries import (
+    BaseRepository,
+    filter_by_fields,
+    order_by_field,
+    search_by_text,
+)
 
 # Import our custom modules
 from .session import get_db, get_db_session

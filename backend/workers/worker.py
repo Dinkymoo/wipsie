@@ -19,6 +19,6 @@ from backend.workers.tasks import email  # noqa: F401
 from backend.workers.tasks import general  # noqa: F401
 from backend.workers.tasks import notifications  # noqa: F401
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Start the worker
     app.start()

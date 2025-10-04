@@ -18,11 +18,11 @@ def send_notification(self, notification_data):
     logger.info(f"📢 Sending notification: {self.request.id}")
 
     try:
-        notification_type = notification_data.get('type', 'general')
-        recipient = notification_data.get('recipient', 'unknown')
-        message = notification_data.get('message', 'No message')
-        priority = notification_data.get('priority', 'medium')
-        channels = notification_data.get('channels', ['email', 'log'])
+        notification_type = notification_data.get("type", "general")
+        recipient = notification_data.get("recipient", "unknown")
+        message = notification_data.get("message", "No message")
+        priority = notification_data.get("priority", "medium")
+        channels = notification_data.get("channels", ["email", "log"])
 
         logger.info(f"👤 Recipient: {recipient}")
         logger.info(f"💬 Message: {message}")
@@ -32,54 +32,60 @@ def send_notification(self, notification_data):
         results = []
 
         # Send email notification
-        if 'email' in channels and '@' in recipient:
+        if "email" in channels and "@" in recipient:
             try:
-                email_result = send_notification_email.delay({
-                    'recipient': recipient,
-                    'message': message,
-                    'type': notification_type,
-                    'priority': priority
-                })
-                results.append({
-                    'channel': 'email',
-                    'status': 'queued',
-                    'task_id': email_result.id
-                })
+                email_result = send_notification_email.delay(
+                    {
+                        "recipient": recipient,
+                        "message": message,
+                        "type": notification_type,
+                        "priority": priority,
+                    }
+                )
+                results.append(
+                    {
+                        "channel": "email",
+                        "status": "queued",
+                        "task_id": email_result.id,
+                    }
+                )
                 logger.info("📧 Email notification queued")
             except Exception as e:
                 logger.warning(f"📧 Email notification failed: {e}")
-                results.append({
-                    'channel': 'email',
-                    'status': 'failed',
-                    'error': str(e)
-                })
+                results.append(
+                    {"channel": "email", "status": "failed", "error": str(e)}
+                )
 
         # Log notification (always available)
-        if 'log' in channels:
+        if "log" in channels:
             logger.info(f"📝 LOG NOTIFICATION: {message}")
-            results.append({
-                'channel': 'log',
-                'status': 'sent',
-                'logged_at': datetime.now().isoformat()
-            })
+            results.append(
+                {
+                    "channel": "log",
+                    "status": "sent",
+                    "logged_at": datetime.now().isoformat(),
+                }
+            )
 
         # Could add more channels here (SMS, Slack, etc.)
-        if 'slack' in channels:
+        if "slack" in channels:
             # Placeholder for Slack integration
-            results.append({
-                'channel': 'slack',
-                'status': 'not_implemented',
-                'message': 'Slack integration coming soon'
-            })
+            results.append(
+                {
+                    "channel": "slack",
+                    "status": "not_implemented",
+                    "message": "Slack integration coming soon",
+                }
+            )
 
         notification_result = {
-            'notification_id': self.request.id,
-            'type': notification_type,
-            'recipient': recipient,
-            'sent_at': datetime.now().isoformat(),
-            'channels_attempted': channels,
-            'results': results,
-            'priority': priority
+            "notification_id": self.request.id,
+            "type": notification_type,
+            "recipient": recipient,
+            "sent_at": datetime.now().isoformat(),
+            "channels_attempted": channels,
+            "results": results,
+            "priority": priority,
         }
 
         logger.info("✅ Notification processing completed")
@@ -96,29 +102,31 @@ def notify_task_completion(self, task_data):
     logger.info(f"🎯 Sending task completion notification: {self.request.id}")
 
     try:
-        task_id = task_data.get('task_id', self.request.id)
-        task_type = task_data.get('task_type', 'unknown')
-        status = task_data.get('status', 'completed')
-        recipient = task_data.get('recipient', 'admin@wipsie.com')
-        details = task_data.get('details', {})
+        task_id = task_data.get("task_id", self.request.id)
+        task_type = task_data.get("task_type", "unknown")
+        status = task_data.get("status", "completed")
+        recipient = task_data.get("recipient", "admin@wipsie.com")
+        details = task_data.get("details", {})
 
         # Queue task completion email
-        email_task = send_task_completion_email.delay({
-            'task_id': task_id,
-            'task_type': task_type,
-            'status': status,
-            'recipient': recipient,
-            'details': details
-        })
+        email_task = send_task_completion_email.delay(
+            {
+                "task_id": task_id,
+                "task_type": task_type,
+                "status": status,
+                "recipient": recipient,
+                "details": details,
+            }
+        )
 
         logger.info(f"📧 Task completion email queued for {recipient}")
 
         return {
-            'notification_type': 'task_completion',
-            'task_id': task_id,
-            'status': status,
-            'email_task_id': email_task.id,
-            'sent_at': datetime.now().isoformat()
+            "notification_type": "task_completion",
+            "task_id": task_id,
+            "status": status,
+            "email_task_id": email_task.id,
+            "sent_at": datetime.now().isoformat(),
         }
 
     except Exception as e:
@@ -132,10 +140,10 @@ def send_alert(self, alert_data):
     logger.info(f"🚨 Sending alert: {self.request.id}")
 
     try:
-        alert_type = alert_data.get('type', 'general')
-        severity = alert_data.get('severity', 'medium')
-        message = alert_data.get('message', 'Alert triggered')
-        recipients = alert_data.get('recipients', ['admin@wipsie.com'])
+        alert_type = alert_data.get("type", "general")
+        severity = alert_data.get("severity", "medium")
+        message = alert_data.get("message", "Alert triggered")
+        recipients = alert_data.get("recipients", ["admin@wipsie.com"])
 
         logger.warning(f"🚨 ALERT: {alert_type} - {message}")
 
@@ -144,36 +152,42 @@ def send_alert(self, alert_data):
         for recipient in recipients:
             try:
                 # Send immediate notification for alerts
-                notification_result = send_notification.delay({
-                    'type': f'alert_{alert_type}',
-                    'recipient': recipient,
-                    'message': f"🚨 ALERT: {message}",
-                    'priority': 'high',
-                    'channels': ['email', 'log']
-                })
+                notification_result = send_notification.delay(
+                    {
+                        "type": f"alert_{alert_type}",
+                        "recipient": recipient,
+                        "message": f"🚨 ALERT: {message}",
+                        "priority": "high",
+                        "channels": ["email", "log"],
+                    }
+                )
 
-                alert_results.append({
-                    'recipient': recipient,
-                    'status': 'queued',
-                    'task_id': notification_result.id
-                })
+                alert_results.append(
+                    {
+                        "recipient": recipient,
+                        "status": "queued",
+                        "task_id": notification_result.id,
+                    }
+                )
 
             except Exception as e:
                 logger.error(f"❌ Alert failed for {recipient}: {e}")
-                alert_results.append({
-                    'recipient': recipient,
-                    'status': 'failed',
-                    'error': str(e)
-                })
+                alert_results.append(
+                    {
+                        "recipient": recipient,
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
 
         return {
-            'alert_id': self.request.id,
-            'type': alert_type,
-            'severity': severity,
-            'message': message,
-            'recipients_count': len(recipients),
-            'results': alert_results,
-            'triggered_at': datetime.now().isoformat()
+            "alert_id": self.request.id,
+            "type": alert_type,
+            "severity": severity,
+            "message": message,
+            "recipients_count": len(recipients),
+            "results": alert_results,
+            "triggered_at": datetime.now().isoformat(),
         }
 
     except Exception as e:

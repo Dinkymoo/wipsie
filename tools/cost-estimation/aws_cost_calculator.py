@@ -25,39 +25,39 @@ class AWSCostCalculator:
 
     # AWS Pricing (EU-West-1, as of 2024)
     LAMBDA_PRICING = {
-        'request_price': 0.0000002,  # $0.20 per 1M requests
-        'gb_second_price': 0.0000166667,  # Per GB-second
-        'free_requests': 1_000_000,  # Free tier
-        'free_gb_seconds': 400_000,  # Free tier
+        "request_price": 0.0000002,  # $0.20 per 1M requests
+        "gb_second_price": 0.0000166667,  # Per GB-second
+        "free_requests": 1_000_000,  # Free tier
+        "free_gb_seconds": 400_000,  # Free tier
     }
 
     S3_PRICING = {
-        'standard_storage': 0.023,  # Per GB/month
-        'requests_put': 0.0000051,  # Per 1000 requests
-        'requests_get': 0.0000004,  # Per 1000 requests
-        'data_transfer': 0.09,  # Per GB after first 1GB free
+        "standard_storage": 0.023,  # Per GB/month
+        "requests_put": 0.0000051,  # Per 1000 requests
+        "requests_get": 0.0000004,  # Per 1000 requests
+        "data_transfer": 0.09,  # Per GB after first 1GB free
     }
 
     RDS_PRICING = {
-        'db_t3_micro': 0.017,  # Per hour
-        'db_t3_small': 0.034,  # Per hour
-        'db_t3_medium': 0.068,  # Per hour
-        'storage_gp2': 0.115,  # Per GB/month
+        "db_t3_micro": 0.017,  # Per hour
+        "db_t3_small": 0.034,  # Per hour
+        "db_t3_medium": 0.068,  # Per hour
+        "storage_gp2": 0.115,  # Per GB/month
     }
 
     SQS_PRICING = {
-        'requests': 0.0000004,  # Per request after first 1M free
-        'free_requests': 1_000_000,  # Free tier
+        "requests": 0.0000004,  # Per request after first 1M free
+        "free_requests": 1_000_000,  # Free tier
     }
 
     SES_PRICING = {
-        'email_cost': 0.10,  # Per 1000 emails
-        'free_emails': 62_000,  # Free tier (if sent from EC2)
+        "email_cost": 0.10,  # Per 1000 emails
+        "free_emails": 62_000,  # Free tier (if sent from EC2)
     }
 
     CLOUDFRONT_PRICING = {
-        'data_transfer_first_10tb': 0.085,  # Per GB
-        'requests_per_10k': 0.0075,  # Per 10,000 requests
+        "data_transfer_first_10tb": 0.085,  # Per GB
+        "requests_per_10k": 0.0075,  # Per 10,000 requests
     }
 
     def __init__(self, usage_profile: str = "development"):
@@ -127,7 +127,7 @@ class AWSCostCalculator:
                 "ses_emails_per_month": 100_000,
                 "cloudfront_data_transfer_gb": 500,
                 "cloudfront_requests": 1_000_000,
-            }
+            },
         }
         return profiles.get(profile, profiles["learning"])
 
@@ -137,52 +137,63 @@ class AWSCostCalculator:
 
         # Calculate compute costs
         gb_seconds = (
-            usage["lambda_invocations_per_month"] *
-            (usage["lambda_avg_duration_ms"] / 1000) *
-            (usage["lambda_memory_mb"] / 1024)
+            usage["lambda_invocations_per_month"]
+            * (usage["lambda_avg_duration_ms"] / 1000)
+            * (usage["lambda_memory_mb"] / 1024)
         )
 
         # Apply free tier
         billable_requests = max(
-            0, usage["lambda_invocations_per_month"] - self.LAMBDA_PRICING["free_requests"])
+            0,
+            usage["lambda_invocations_per_month"]
+            - self.LAMBDA_PRICING["free_requests"],
+        )
         billable_gb_seconds = max(
-            0, gb_seconds - self.LAMBDA_PRICING["free_gb_seconds"])
+            0, gb_seconds - self.LAMBDA_PRICING["free_gb_seconds"]
+        )
 
         request_cost = billable_requests * self.LAMBDA_PRICING["request_price"]
-        compute_cost = billable_gb_seconds * \
-            self.LAMBDA_PRICING["gb_second_price"]
+        compute_cost = (
+            billable_gb_seconds * self.LAMBDA_PRICING["gb_second_price"]
+        )
 
         total_cost = request_cost + compute_cost
 
-        self.estimates.append(CostEstimate(
-            service="AWS Lambda",
-            resource="Lambda Functions (data_poller + task_processor)",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=f"{usage['lambda_invocations_per_month']:,} invocations, "
-            f"{usage['lambda_memory_mb']}MB memory, "
-            f"{usage['lambda_avg_duration_ms']}ms avg duration"
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="AWS Lambda",
+                resource="Lambda Functions (data_poller + task_processor)",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=f"{usage['lambda_invocations_per_month']:,} invocations, "
+                f"{usage['lambda_memory_mb']}MB memory, "
+                f"{usage['lambda_avg_duration_ms']}ms avg duration",
+            )
+        )
 
     def calculate_s3_costs(self) -> None:
         """Calculate S3 storage costs."""
         usage = self.usage_assumptions
 
-        storage_cost = usage["s3_storage_gb"] * \
-            self.S3_PRICING["standard_storage"]
-        request_cost = (usage["s3_requests_per_month"] /
-                        1000) * self.S3_PRICING["requests_put"]
+        storage_cost = (
+            usage["s3_storage_gb"] * self.S3_PRICING["standard_storage"]
+        )
+        request_cost = (
+            usage["s3_requests_per_month"] / 1000
+        ) * self.S3_PRICING["requests_put"]
 
         total_cost = storage_cost + request_cost
 
-        self.estimates.append(CostEstimate(
-            service="Amazon S3",
-            resource="Frontend hosting + Lambda packages",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=f"{usage['s3_storage_gb']}GB storage, "
-            f"{usage['s3_requests_per_month']:,} requests/month"
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="Amazon S3",
+                resource="Frontend hosting + Lambda packages",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=f"{usage['s3_storage_gb']}GB storage, "
+                f"{usage['s3_requests_per_month']:,} requests/month",
+            )
+        )
 
     def calculate_rds_costs(self) -> None:
         """Calculate RDS PostgreSQL costs."""
@@ -192,92 +203,115 @@ class AWSCostCalculator:
         if self.usage_profile == "learning":
             free_tier_hours = 750  # AWS Free Tier limit
             billable_hours = max(
-                0, usage["rds_hours_per_month"] - free_tier_hours)
-            instance_cost = billable_hours * \
-                self.RDS_PRICING[usage["rds_instance_type"]]
+                0, usage["rds_hours_per_month"] - free_tier_hours
+            )
+            instance_cost = (
+                billable_hours * self.RDS_PRICING[usage["rds_instance_type"]]
+            )
 
             # Storage within 20GB is free for first 12 months
             free_storage_gb = 20
             billable_storage = max(
-                0, usage["rds_storage_gb"] - free_storage_gb)
+                0, usage["rds_storage_gb"] - free_storage_gb
+            )
             storage_cost = billable_storage * self.RDS_PRICING["storage_gp2"]
         else:
-            instance_cost = usage["rds_hours_per_month"] * \
-                self.RDS_PRICING[usage["rds_instance_type"]]
-            storage_cost = usage["rds_storage_gb"] * \
-                self.RDS_PRICING["storage_gp2"]
+            instance_cost = (
+                usage["rds_hours_per_month"]
+                * self.RDS_PRICING[usage["rds_instance_type"]]
+            )
+            storage_cost = (
+                usage["rds_storage_gb"] * self.RDS_PRICING["storage_gp2"]
+            )
 
         total_cost = instance_cost + storage_cost
 
-        assumptions = f"{usage['rds_instance_type']}, " \
+        assumptions = (
+            f"{usage['rds_instance_type']}, "
             f"{usage['rds_storage_gb']}GB storage"
+        )
 
         if self.usage_profile == "learning":
             assumptions += f", {usage['rds_hours_per_month']} hours/month (Free Tier: 750h)"
         else:
             assumptions += f", Always on (730 hours/month)"
 
-        self.estimates.append(CostEstimate(
-            service="Amazon RDS",
-            resource=f"PostgreSQL ({usage['rds_instance_type']})",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=assumptions
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="Amazon RDS",
+                resource=f"PostgreSQL ({usage['rds_instance_type']})",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=assumptions,
+            )
+        )
 
     def calculate_sqs_costs(self) -> None:
         """Calculate SQS costs."""
         usage = self.usage_assumptions
 
         billable_requests = max(
-            0, usage["sqs_requests_per_month"] - self.SQS_PRICING["free_requests"])
+            0,
+            usage["sqs_requests_per_month"]
+            - self.SQS_PRICING["free_requests"],
+        )
         total_cost = billable_requests * self.SQS_PRICING["requests"]
 
-        self.estimates.append(CostEstimate(
-            service="Amazon SQS",
-            resource="Message Queues (default, data-polling, task-processing, notifications)",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=f"{usage['sqs_requests_per_month']:,} requests/month "
-            f"(first 1M free)"
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="Amazon SQS",
+                resource="Message Queues (default, data-polling, task-processing, notifications)",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=f"{usage['sqs_requests_per_month']:,} requests/month "
+                f"(first 1M free)",
+            )
+        )
 
     def calculate_ses_costs(self) -> None:
         """Calculate SES email costs."""
         usage = self.usage_assumptions
 
         billable_emails = max(
-            0, usage["ses_emails_per_month"] - self.SES_PRICING["free_emails"])
+            0, usage["ses_emails_per_month"] - self.SES_PRICING["free_emails"]
+        )
         total_cost = (billable_emails / 1000) * self.SES_PRICING["email_cost"]
 
-        self.estimates.append(CostEstimate(
-            service="Amazon SES",
-            resource="Email notifications",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=f"{usage['ses_emails_per_month']:,} emails/month "
-            f"(first 62K free if sent from EC2)"
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="Amazon SES",
+                resource="Email notifications",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=f"{usage['ses_emails_per_month']:,} emails/month "
+                f"(first 62K free if sent from EC2)",
+            )
+        )
 
     def calculate_cloudfront_costs(self) -> None:
         """Calculate CloudFront CDN costs."""
         usage = self.usage_assumptions
 
-        data_transfer_cost = usage["cloudfront_data_transfer_gb"] * \
-            self.CLOUDFRONT_PRICING["data_transfer_first_10tb"]
-        request_cost = (usage["cloudfront_requests"] / 10000) * \
-            self.CLOUDFRONT_PRICING["requests_per_10k"]
+        data_transfer_cost = (
+            usage["cloudfront_data_transfer_gb"]
+            * self.CLOUDFRONT_PRICING["data_transfer_first_10tb"]
+        )
+        request_cost = (
+            usage["cloudfront_requests"] / 10000
+        ) * self.CLOUDFRONT_PRICING["requests_per_10k"]
 
         total_cost = data_transfer_cost + request_cost
 
-        self.estimates.append(CostEstimate(
-            service="Amazon CloudFront",
-            resource="CDN for frontend distribution",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=f"{usage['cloudfront_data_transfer_gb']}GB data transfer, "
-            f"{usage['cloudfront_requests']:,} requests/month"
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="Amazon CloudFront",
+                resource="CDN for frontend distribution",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=f"{usage['cloudfront_data_transfer_gb']}GB data transfer, "
+                f"{usage['cloudfront_requests']:,} requests/month",
+            )
+        )
 
     def calculate_github_actions_costs(self) -> None:
         """Calculate GitHub Actions costs."""
@@ -288,9 +322,9 @@ class AWSCostCalculator:
         else:
             # Estimate workflow runtime for private repos
             workflows_per_day = {
-                "development": 5,    # Few commits per day
-                "staging": 10,       # More active development
-                "production": 3,     # Only main branch merges
+                "development": 5,  # Few commits per day
+                "staging": 10,  # More active development
+                "production": 3,  # Only main branch merges
             }
 
             daily_workflows = workflows_per_day.get(self.usage_profile, 5)
@@ -306,17 +340,21 @@ class AWSCostCalculator:
             cost_per_minute = 0.008
 
             total_cost = billable_minutes * cost_per_minute
-            assumptions = f"{daily_workflows} workflows/day, " \
-                f"{minutes_per_run} min/workflow, " \
+            assumptions = (
+                f"{daily_workflows} workflows/day, "
+                f"{minutes_per_run} min/workflow, "
                 f"{total_minutes} total minutes/month"
+            )
 
-        self.estimates.append(CostEstimate(
-            service="GitHub Actions",
-            resource="CI/CD workflows",
-            monthly_cost=total_cost,
-            unit="USD",
-            assumptions=assumptions
-        ))
+        self.estimates.append(
+            CostEstimate(
+                service="GitHub Actions",
+                resource="CI/CD workflows",
+                monthly_cost=total_cost,
+                unit="USD",
+                assumptions=assumptions,
+            )
+        )
 
     def calculate_all_costs(self) -> None:
         """Calculate all cost estimates."""
@@ -345,7 +383,8 @@ class AWSCostCalculator:
             print(f"💰 {estimate.service}")
             print(f"   Resource: {estimate.resource}")
             print(
-                f"   Monthly Cost: ${estimate.monthly_cost:.2f} {estimate.unit}")
+                f"   Monthly Cost: ${estimate.monthly_cost:.2f} {estimate.unit}"
+            )
             print(f"   Assumptions: {estimate.assumptions}")
             print()
             total_cost += estimate.monthly_cost
@@ -357,11 +396,17 @@ class AWSCostCalculator:
 
         # Cost breakdown by service
         print(f"\n📊 Cost Breakdown:")
-        for estimate in sorted(self.estimates, key=lambda x: x.monthly_cost, reverse=True):
-            percentage = (estimate.monthly_cost / total_cost) * \
-                100 if total_cost > 0 else 0
+        for estimate in sorted(
+            self.estimates, key=lambda x: x.monthly_cost, reverse=True
+        ):
+            percentage = (
+                (estimate.monthly_cost / total_cost) * 100
+                if total_cost > 0
+                else 0
+            )
             print(
-                f"   {estimate.service:<20} ${estimate.monthly_cost:>6.2f} ({percentage:4.1f}%)")
+                f"   {estimate.service:<20} ${estimate.monthly_cost:>6.2f} ({percentage:4.1f}%)"
+            )
 
     def export_json(self, filename: str = None) -> str:
         """Export cost estimates to JSON."""
@@ -379,13 +424,13 @@ class AWSCostCalculator:
                     "resource": est.resource,
                     "monthly_cost": est.monthly_cost,
                     "unit": est.unit,
-                    "assumptions": est.assumptions
+                    "assumptions": est.assumptions,
                 }
                 for est in self.estimates
-            ]
+            ],
         }
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             json.dump(data, f, indent=2)
 
         return filename
@@ -393,22 +438,18 @@ class AWSCostCalculator:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Estimate AWS costs for Wipsie application")
+        description="Estimate AWS costs for Wipsie application"
+    )
     parser.add_argument(
         "--profile",
         choices=["learning", "development", "staging", "production"],
         default="learning",
-        help="Usage profile for cost estimation (learning uses AWS Free Tier)"
+        help="Usage profile for cost estimation (learning uses AWS Free Tier)",
     )
     parser.add_argument(
-        "--export",
-        action="store_true",
-        help="Export results to JSON file"
+        "--export", action="store_true", help="Export results to JSON file"
     )
-    parser.add_argument(
-        "--output",
-        help="Output filename for JSON export"
-    )
+    parser.add_argument("--output", help="Output filename for JSON export")
 
     args = parser.parse_args()
 

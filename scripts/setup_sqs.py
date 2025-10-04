@@ -18,10 +18,10 @@ def create_sqs_queues():
     # Initialize SQS client
     try:
         sqs = boto3.client(
-            'sqs',
+            "sqs",
             region_name=settings.AWS_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
     except Exception as e:
         print(f"❌ Failed to initialize SQS client: {e}")
@@ -45,17 +45,17 @@ def create_sqs_queues():
             response = sqs.create_queue(
                 QueueName=queue_name,
                 Attributes={
-                    'VisibilityTimeout': '300',  # 5 minutes
-                    'MessageRetentionPeriod': '1209600',  # 14 days
-                    'ReceiveMessageWaitTimeSeconds': '20',  # Long polling
-                }
+                    "VisibilityTimeout": "300",  # 5 minutes
+                    "MessageRetentionPeriod": "1209600",  # 14 days
+                    "ReceiveMessageWaitTimeSeconds": "20",  # Long polling
+                },
             )
             created_queues.append(queue_name)
             print(f"✅ Created queue: {queue_name}")
             print(f"   Queue URL: {response['QueueUrl']}")
 
         except ClientError as e:
-            if e.response['Error']['Code'] == 'QueueAlreadyExists':
+            if e.response["Error"]["Code"] == "QueueAlreadyExists":
                 existing_queues.append(queue_name)
                 print(f"ℹ️  Queue already exists: {queue_name}")
             else:
@@ -86,19 +86,19 @@ def list_existing_queues():
     """List all existing SQS queues"""
     try:
         sqs = boto3.client(
-            'sqs',
+            "sqs",
             region_name=settings.AWS_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
         response = sqs.list_queues()
-        queues = response.get('QueueUrls', [])
+        queues = response.get("QueueUrls", [])
 
         print(f"\n📋 Existing SQS queues in {settings.AWS_REGION}:")
         if queues:
             for queue_url in queues:
-                queue_name = queue_url.split('/')[-1]
+                queue_name = queue_url.split("/")[-1]
                 print(f"  - {queue_name}")
                 print(f"    URL: {queue_url}")
         else:

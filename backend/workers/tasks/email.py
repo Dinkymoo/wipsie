@@ -19,10 +19,10 @@ def send_notification_email(self, notification_data):
     logger.info(f"📧 Sending notification email: {self.request.id}")
 
     try:
-        recipient = notification_data.get('recipient', 'unknown')
-        message = notification_data.get('message', 'No message')
-        notification_type = notification_data.get('type', 'general')
-        priority = notification_data.get('priority', 'medium')
+        recipient = notification_data.get("recipient", "unknown")
+        message = notification_data.get("message", "No message")
+        notification_type = notification_data.get("type", "general")
+        priority = notification_data.get("priority", "medium")
 
         logger.info(f"👤 Recipient: {recipient}")
         logger.info(f"💬 Message: {message}")
@@ -30,14 +30,14 @@ def send_notification_email(self, notification_data):
 
         # Send email notification using SES service
         email_result = None
-        if '@' in recipient:  # If recipient looks like an email
+        if "@" in recipient:  # If recipient looks like an email
             try:
                 email_result = ses_service.send_notification_email(
                     recipient=recipient,
                     notification_type=notification_type,
                     title=f"Wipsie Notification: {notification_type}",
                     content=message,
-                    priority=priority
+                    priority=priority,
                 )
                 logger.info("📧 Email notification sent via SES")
             except Exception as e:
@@ -45,19 +45,19 @@ def send_notification_email(self, notification_data):
 
         # Create notification result
         result = {
-            'notification_sent': True,
-            'recipient': recipient,
-            'sent_at': datetime.now().isoformat(),
-            'methods': [],
-            'email_result': email_result
+            "notification_sent": True,
+            "recipient": recipient,
+            "sent_at": datetime.now().isoformat(),
+            "methods": [],
+            "email_result": email_result,
         }
 
         # Add email method if successful
         if email_result:
-            result['methods'].append('email')
+            result["methods"].append("email")
 
         # Could add other notification methods here (SMS, Slack, etc.)
-        result['methods'].append('logged')
+        result["methods"].append("logged")
 
         logger.info("✅ Email notification sent successfully")
         return result
@@ -73,11 +73,11 @@ def send_task_completion_email(self, task_data):
     logger.info(f"🎯 Sending task completion email: {self.request.id}")
 
     try:
-        task_id = task_data.get('task_id', self.request.id)
-        task_type = task_data.get('task_type', 'unknown')
-        status = task_data.get('status', 'completed')
-        recipient = task_data.get('recipient', 'admin@wipsie.com')
-        details = task_data.get('details', {})
+        task_id = task_data.get("task_id", self.request.id)
+        task_type = task_data.get("task_type", "unknown")
+        status = task_data.get("status", "completed")
+        recipient = task_data.get("recipient", "admin@wipsie.com")
+        details = task_data.get("details", {})
 
         # Send task completion email
         email_result = ses_service.send_task_completion_email(
@@ -85,18 +85,18 @@ def send_task_completion_email(self, task_data):
             task_id=task_id,
             task_type=task_type,
             status=status,
-            details=details
+            details=details,
         )
 
         logger.info(f"📧 Task completion email sent to {recipient}")
 
         return {
-            'notification_type': 'task_completion',
-            'task_id': task_id,
-            'status': status,
-            'email_sent': True,
-            'email_message_id': email_result['message_id'],
-            'sent_at': datetime.now().isoformat()
+            "notification_type": "task_completion",
+            "task_id": task_id,
+            "status": status,
+            "email_sent": True,
+            "email_message_id": email_result["message_id"],
+            "sent_at": datetime.now().isoformat(),
         }
 
     except Exception as e:
@@ -110,34 +110,34 @@ def process_email_queue(self, email_data):
     logger.info(f"📧 Processing email queue: {self.request.id}")
 
     try:
-        email_type = email_data.get('email_type', 'general')
+        email_type = email_data.get("email_type", "general")
 
-        if email_type == 'notification':
+        if email_type == "notification":
             # Handle notification emails
             result = ses_service.send_notification_email(
-                recipient=email_data['recipient'],
-                notification_type=email_data['notification_type'],
-                title=email_data['title'],
-                content=email_data['content'],
-                priority=email_data.get('priority', 'medium')
+                recipient=email_data["recipient"],
+                notification_type=email_data["notification_type"],
+                title=email_data["title"],
+                content=email_data["content"],
+                priority=email_data.get("priority", "medium"),
             )
-        elif email_type == 'task_completion':
+        elif email_type == "task_completion":
             # Handle task completion emails
             result = ses_service.send_task_completion_email(
-                recipient=email_data['recipient'],
-                task_id=email_data['task_id'],
-                task_type=email_data['task_type'],
-                status=email_data['status'],
-                details=email_data['details']
+                recipient=email_data["recipient"],
+                task_id=email_data["task_id"],
+                task_type=email_data["task_type"],
+                status=email_data["status"],
+                details=email_data["details"],
             )
         else:
             # Handle general emails
             result = ses_service.send_email(
-                to_emails=email_data['to_emails'],
-                subject=email_data['subject'],
-                body_text=email_data['body_text'],
-                body_html=email_data.get('body_html'),
-                sender_email=email_data.get('sender_email')
+                to_emails=email_data["to_emails"],
+                subject=email_data["subject"],
+                body_text=email_data["body_text"],
+                body_html=email_data.get("body_html"),
+                sender_email=email_data.get("sender_email"),
             )
 
         logger.info(f"📧 Email sent successfully: {result['message_id']}")

@@ -11,4 +11,4 @@ from .tasks import email  # noqa: F401
 from .tasks import general  # noqa: F401
 from .tasks import notifications  # noqa: F401
 
-__all__ = ['celery_app']
+__all__ = ["celery_app"]

@@ -18,18 +18,23 @@ def test_worker_imports():
 
     try:
         from backend.workers import celery_app
+
         print("✅ Celery app imported successfully")
 
         from backend.workers.tasks import data_processing
+
         print("✅ Data processing tasks imported")
 
         from backend.workers.tasks import general
+
         print("✅ General tasks imported")
 
         from backend.workers.tasks import email
+
         print("✅ Email tasks imported")
 
         from backend.workers.tasks import notifications
+
         print("✅ Notification tasks imported")
 
         return True
@@ -50,19 +55,19 @@ def test_task_registration():
         registered_tasks = list(celery_app.tasks.keys())
 
         expected_tasks = [
-            'backend.workers.tasks.data_processing.process_default_message',
-            'backend.workers.tasks.data_processing.process_data_polling',
-            'backend.workers.tasks.data_processing.enrich_data',
-            'backend.workers.tasks.general.process_task',
-            'backend.workers.tasks.general.health_check',
-            'backend.workers.tasks.email.send_notification_email',
-            'backend.workers.tasks.email.send_task_completion_email',
-            'backend.workers.tasks.notifications.send_notification',
+            "backend.workers.tasks.data_processing.process_default_message",
+            "backend.workers.tasks.data_processing.process_data_polling",
+            "backend.workers.tasks.data_processing.enrich_data",
+            "backend.workers.tasks.general.process_task",
+            "backend.workers.tasks.general.health_check",
+            "backend.workers.tasks.email.send_notification_email",
+            "backend.workers.tasks.email.send_task_completion_email",
+            "backend.workers.tasks.notifications.send_notification",
         ]
 
         print(f"📊 Found {len(registered_tasks)} registered tasks:")
         for task in sorted(registered_tasks):
-            if not task.startswith('celery.'):
+            if not task.startswith("celery."):
                 print(f"   ✓ {task}")
 
         # Check if our expected tasks are registered
@@ -96,7 +101,8 @@ def test_queue_configuration():
 
         # Check predefined queues
         queues = celery_app.conf.broker_transport_options.get(
-            'predefined_queues', {})
+            "predefined_queues", {}
+        )
         print(f"📬 Configured queues: {list(queues.keys())}")
 
         # Check task routes
@@ -118,7 +124,7 @@ def main():
     tests = [
         test_worker_imports,
         test_task_registration,
-        test_queue_configuration
+        test_queue_configuration,
     ]
 
     passed = 0
@@ -144,6 +150,6 @@ def main():
     return failed == 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = main()
     sys.exit(0 if success else 1)

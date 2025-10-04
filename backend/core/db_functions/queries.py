@@ -27,8 +27,9 @@ class BaseRepository(Generic[ModelType]):
     def get(self, id: int) -> Optional[ModelType]:
         """Get a single record by ID."""
         try:
-            return (self.db.query(self.model)
-                    .filter(self.model.id == id).first())
+            return (
+                self.db.query(self.model).filter(self.model.id == id).first()
+            )
         except SQLAlchemyError as e:
             logger.error(
                 f"Error getting {self.model.__name__} with id {id}: {e}"
@@ -99,8 +100,9 @@ class BaseRepository(Generic[ModelType]):
             return 0
 
 
-def filter_by_fields(query: Query, model: Type[ModelType],
-                     filters: Dict[str, Any]) -> Query:
+def filter_by_fields(
+    query: Query, model: Type[ModelType], filters: Dict[str, Any]
+) -> Query:
     """
     Apply filters to a query based on field values.
 
@@ -118,8 +120,12 @@ def filter_by_fields(query: Query, model: Type[ModelType],
     return query
 
 
-def search_by_text(query: Query, model: Type[ModelType],
-                   search_fields: List[str], search_term: str) -> Query:
+def search_by_text(
+    query: Query,
+    model: Type[ModelType],
+    search_fields: List[str],
+    search_term: str,
+) -> Query:
     """
     Add text search conditions to a query.
 
@@ -147,8 +153,12 @@ def search_by_text(query: Query, model: Type[ModelType],
     return query
 
 
-def order_by_field(query: Query, model: Type[ModelType],
-                   order_by: str, desc_order: bool = False) -> Query:
+def order_by_field(
+    query: Query,
+    model: Type[ModelType],
+    order_by: str,
+    desc_order: bool = False,
+) -> Query:
     """
     Add ordering to a query.
 

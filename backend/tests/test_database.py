@@ -45,6 +45,7 @@ class TestDatabaseConfiguration:
         """Test that we can import database modules."""
         try:
             from backend.db.database import engine, get_db
+
             assert get_db is not None
             assert engine is not None
         except ImportError as e:
@@ -54,6 +55,7 @@ class TestDatabaseConfiguration:
         """Test that we can import model modules."""
         try:
             from backend.models.models import Base
+
             assert Base is not None
         except ImportError:
             # Models might not be fully implemented yet
@@ -65,9 +67,7 @@ class TestDatabaseConfiguration:
 
         # Check if alembic.ini exists
         alembic_ini_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "..",
-            "alembic.ini"
+            os.path.dirname(os.path.dirname(__file__)), "..", "alembic.ini"
         )
 
         # This is optional as alembic might be in different location

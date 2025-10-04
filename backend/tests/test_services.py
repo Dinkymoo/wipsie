@@ -12,6 +12,7 @@ class TestUserService:
         """Test that user service can be imported."""
         try:
             from backend.services.user_service import UserService
+
             assert UserService is not None
         except ImportError:
             pytest.skip("UserService not yet implemented")
@@ -36,6 +37,7 @@ class TestTaskService:
         """Test that task service can be imported."""
         try:
             from backend.services.task_service import TaskService
+
             assert TaskService is not None
         except ImportError:
             pytest.skip("TaskService not yet implemented")
@@ -60,6 +62,7 @@ class TestDataPointService:
         """Test that data point service can be imported."""
         try:
             from backend.services.data_point_service import DataPointService
+
             assert DataPointService is not None
         except ImportError:
             pytest.skip("DataPointService not yet implemented")
@@ -84,6 +87,7 @@ class TestLambdaService:
         """Test that Lambda service can be imported."""
         try:
             from backend.services.lambda_service import LambdaService
+
             assert LambdaService is not None
         except ImportError:
             pytest.skip("LambdaService not yet implemented")
@@ -108,6 +112,7 @@ class TestCeleryTasks:
         """Test that tasks module can be imported."""
         try:
             from backend.services import tasks
+
             assert tasks is not None
         except ImportError:
             pytest.skip("Tasks module not yet implemented")
@@ -116,6 +121,7 @@ class TestCeleryTasks:
         """Test that Celery app can be imported."""
         try:
             from backend.core.celery_app import celery_app
+
             assert celery_app is not None
         except ImportError:
             pytest.skip("Celery app not yet implemented")
@@ -128,9 +134,7 @@ class TestServiceIntegration:
         """Test that service modules exist."""
         import os
 
-        service_dir = os.path.join(
-            os.path.dirname(__file__), "..", "services"
-        )
+        service_dir = os.path.join(os.path.dirname(__file__), "..", "services")
 
         assert os.path.exists(service_dir)
 
@@ -140,7 +144,7 @@ class TestServiceIntegration:
             "task_service.py",
             "data_point_service.py",
             "lambda_service.py",
-            "tasks.py"
+            "tasks.py",
         ]
 
         existing_files = os.listdir(service_dir)
@@ -163,6 +167,7 @@ class TestServiceIntegration:
         """Test that services integrate with schemas."""
         try:
             from backend.schemas import schemas
+
             assert schemas is not None
         except ImportError:
             pytest.skip("Schemas module not yet implemented")

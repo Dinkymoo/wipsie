@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 class SQSMessage(BaseModel):
     """Standard SQS message format"""
+
     id: str
     timestamp: str
     source: str
@@ -24,6 +25,7 @@ class SQSMessage(BaseModel):
 
 class QueueInfo(BaseModel):
     """Queue information and statistics"""
+
     queue_name: str
     queue_url: str
     messages_available: int
@@ -37,6 +39,7 @@ class QueueInfo(BaseModel):
 
 class MessageResponse(BaseModel):
     """Response model for sent messages"""
+
     message_id: str
     queue: str
     status: str

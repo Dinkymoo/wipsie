@@ -10,6 +10,7 @@ from pydantic import BaseModel, EmailStr
 
 class EmailMessage(BaseModel):
     """Standard email message format"""
+
     to_emails: List[EmailStr]
     subject: str
     body_text: str
@@ -22,6 +23,7 @@ class EmailMessage(BaseModel):
 
 class EmailTemplate(BaseModel):
     """Email template configuration"""
+
     template_name: str
     subject_template: str
     text_template: str
@@ -31,6 +33,7 @@ class EmailTemplate(BaseModel):
 
 class NotificationEmail(BaseModel):
     """Notification email specific format"""
+
     recipient: EmailStr
     notification_type: str
     title: str
@@ -41,6 +44,7 @@ class NotificationEmail(BaseModel):
 
 class TaskCompletionEmail(BaseModel):
     """Task completion notification format"""
+
     recipient: EmailStr
     task_id: str
     task_type: str
@@ -52,6 +56,7 @@ class TaskCompletionEmail(BaseModel):
 
 class EmailResponse(BaseModel):
     """Response model for sent emails"""
+
     message_id: str
     sender: str
     recipients: List[str]
@@ -63,6 +68,7 @@ class EmailResponse(BaseModel):
 
 class SESQuota(BaseModel):
     """SES sending quota information"""
+
     max_24_hour_send: float
     max_send_rate: float
     sent_last_24_hours: float

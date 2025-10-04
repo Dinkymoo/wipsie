@@ -50,8 +50,9 @@ def get_table_columns(db: Session, table_name: str) -> List[Dict[str, Any]]:
         return []
 
 
-def execute_raw_sql(db: Session, sql: str,
-                    params: Optional[Dict[str, Any]] = None) -> Any:
+def execute_raw_sql(
+    db: Session, sql: str, params: Optional[Dict[str, Any]] = None
+) -> Any:
     """
     Execute raw SQL query with optional parameters.
 
@@ -136,18 +137,21 @@ def get_table_size(db: Session, table_name: str) -> Dict[str, Any]:
                 pg_relation_size(:table_name4)
             ) as index_size
         """
-        result = db.execute(text(sql), {
-            "table_name1": table_name,
-            "table_name2": table_name,
-            "table_name3": table_name,
-            "table_name4": table_name
-        })
+        result = db.execute(
+            text(sql),
+            {
+                "table_name1": table_name,
+                "table_name2": table_name,
+                "table_name3": table_name,
+                "table_name4": table_name,
+            },
+        )
         row = result.fetchone()
         if row:
             return {
                 "total_size": row[0],
                 "table_size": row[1],
-                "index_size": row[2]
+                "index_size": row[2],
             }
         return {}
     except SQLAlchemyError as e:

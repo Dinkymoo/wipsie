@@ -38,7 +38,7 @@ class TestAPIEndpoints:
         potential_routes = [
             "/api/v1/users",
             "/api/v1/tasks",
-            "/api/v1/data-points"
+            "/api/v1/data-points",
         ]
 
         for route in potential_routes:
@@ -109,10 +109,7 @@ class TestAsyncEndpoints:
     async def test_async_database_endpoints(self, client):
         """Test async database endpoints if they exist."""
         # Test potential async database endpoints
-        potential_async_routes = [
-            "/api/v1/users",
-            "/api/v1/tasks"
-        ]
+        potential_async_routes = ["/api/v1/users", "/api/v1/tasks"]
 
         for route in potential_async_routes:
             response = client.get(route)

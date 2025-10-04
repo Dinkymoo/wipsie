@@ -22,20 +22,24 @@ def demonstrate_message_lifecycle():
     response = requests.get(f"{base_url}/sqs/queue-info/default")
     if response.status_code == 200:
         info = response.json()
-        retention = info['message_retention']
+        retention = info["message_retention"]
         print(f"📬 Messages available: {info['messages_available']}")
         print(f"⏰ Retention period: {retention['human_readable']}")
         print(f"👁️  Visibility timeout: {info['visibility_timeout_seconds']}s")
 
         # Calculate when messages will expire
-        created_timestamp = int(info['created_timestamp'])
+        created_timestamp = int(info["created_timestamp"])
         created_date = datetime.fromtimestamp(created_timestamp)
-        expiry_date = created_date + \
-            timedelta(seconds=retention['total_seconds'])
+        expiry_date = created_date + timedelta(
+            seconds=retention["total_seconds"]
+        )
 
-        print(f"📅 Queue created: {created_date.strftime('%Y-%m-%d %H:%M:%S')}")
         print(
-            f"🗑️  Messages expire: {expiry_date.strftime('%Y-%m-%d %H:%M:%S')}")
+            f"📅 Queue created: {created_date.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        print(
+            f"🗑️  Messages expire: {expiry_date.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
         days_until_expiry = (expiry_date - datetime.now()).days
         print(f"⏳ Days until current messages expire: {days_until_expiry}")
@@ -50,8 +54,8 @@ def demonstrate_message_lifecycle():
         "demo_info": {
             "purpose": "Demonstrate 14-day retention",
             "automatic_cleanup": True,
-            "visibility_timeout": "30 seconds"
-        }
+            "visibility_timeout": "30 seconds",
+        },
     }
 
     response = requests.post(
@@ -61,9 +65,9 @@ def demonstrate_message_lifecycle():
             "message": test_message,
             "attributes": {
                 "demo": "retention_test",
-                "created_timestamp": str(int(datetime.now().timestamp()))
-            }
-        }
+                "created_timestamp": str(int(datetime.now().timestamp())),
+            },
+        },
     )
 
     if response.status_code == 200:
@@ -84,22 +88,29 @@ def demonstrate_message_lifecycle():
     response = requests.get(f"{base_url}/sqs/receive/default?max_messages=1")
     if response.status_code == 200:
         data = response.json()
-        if data['message_count'] > 0:
-            message = data['messages'][0]
+        if data["message_count"] > 0:
+            message = data["messages"][0]
             print(f"📨 Received message: {message['message_id']}")
             print(f"⏱️  This message is now invisible for 30 seconds")
-            print(f"🔄 It will become visible again automatically if not deleted")
             print(
-                f"🗑️  To delete: DELETE /sqs/message/default?receipt_handle={message['receipt_handle'][:20]}...")
+                f"🔄 It will become visible again automatically if not deleted"
+            )
+            print(
+                f"🗑️  To delete: DELETE /sqs/message/default?receipt_handle={message['receipt_handle'][:20]}..."
+            )
         else:
             print("📭 No messages available (all might be in-flight)")
 
     print("\n💡 Key Takeaways:")
     print("• Messages automatically expire after 14 days")
-    print("• Visibility timeout prevents multiple workers processing same message")
+    print(
+        "• Visibility timeout prevents multiple workers processing same message"
+    )
     print("• Long polling (20s) provides efficient real-time processing")
     print("• Failed messages automatically retry (become visible again)")
-    print("• Always delete successfully processed messages to avoid reprocessing")
+    print(
+        "• Always delete successfully processed messages to avoid reprocessing"
+    )
 
 
 if __name__ == "__main__":

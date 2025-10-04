@@ -5,9 +5,11 @@ from backend.api.endpoints import sqs
 
 app = FastAPI(
     title="Wipsie Full Stack API",
-    description=("A comprehensive full-stack application with FastAPI, "
-                 "Angular, PostgreSQL, and AWS Lambda"),
-    version="1.0.0"
+    description=(
+        "A comprehensive full-stack application with FastAPI, "
+        "Angular, PostgreSQL, and AWS Lambda"
+    ),
+    version="1.0.0",
 )
 
 # Configure CORS

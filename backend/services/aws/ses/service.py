@@ -15,10 +15,10 @@ class SESService:
 
     def __init__(self):
         self.ses = boto3.client(
-            'ses',
+            "ses",
             region_name=settings.AWS_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
         # Default sender (you'll need to verify this in SES)
@@ -31,40 +31,38 @@ class SESService:
         body_text: str,
         body_html: Optional[str] = None,
         sender_email: Optional[str] = None,
-        reply_to: Optional[List[str]] = None
+        reply_to: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Send an email via SES"""
 
         sender = sender_email or self.default_sender
 
         # Prepare email structure
-        destination = {'ToAddresses': to_emails}
+        destination = {"ToAddresses": to_emails}
 
         if reply_to:
-            destination['ReplyToAddresses'] = reply_to
+            destination["ReplyToAddresses"] = reply_to
 
         message = {
-            'Subject': {'Data': subject, 'Charset': 'UTF-8'},
-            'Body': {'Text': {'Data': body_text, 'Charset': 'UTF-8'}}
+            "Subject": {"Data": subject, "Charset": "UTF-8"},
+            "Body": {"Text": {"Data": body_text, "Charset": "UTF-8"}},
         }
 
         if body_html:
-            message['Body']['Html'] = {'Data': body_html, 'Charset': 'UTF-8'}
+            message["Body"]["Html"] = {"Data": body_html, "Charset": "UTF-8"}
 
         # Send email
         response = self.ses.send_email(
-            Source=sender,
-            Destination=destination,
-            Message=message
+            Source=sender, Destination=destination, Message=message
         )
 
         return {
-            'message_id': response['MessageId'],
-            'sender': sender,
-            'recipients': to_emails,
-            'subject': subject,
-            'status': 'sent',
-            'timestamp': datetime.now().isoformat()
+            "message_id": response["MessageId"],
+            "sender": sender,
+            "recipients": to_emails,
+            "subject": subject,
+            "status": "sent",
+            "timestamp": datetime.now().isoformat(),
         }
 
     def send_notification_email(
@@ -73,7 +71,7 @@ class SESService:
         notification_type: str,
         title: str,
         content: str,
-        priority: str = "medium"
+        priority: str = "medium",
     ) -> Dict[str, Any]:
         """Send a notification email with standard formatting"""
 
@@ -113,7 +111,7 @@ class SESService:
             to_emails=[recipient],
             subject=subject,
             body_text=text_body,
-            body_html=html_body
+            body_html=html_body,
         )
 
     def send_task_completion_email(
@@ -122,7 +120,7 @@ class SESService:
         task_id: str,
         task_type: str,
         status: str,
-        details: Dict[str, Any]
+        details: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Send task completion notification"""
 
@@ -146,7 +144,7 @@ class SESService:
             notification_type="task_completion",
             title=title,
             content=content,
-            priority="high" if status == "failed" else "medium"
+            priority="high" if status == "failed" else "medium",
         )
 
     def get_sending_quota(self) -> Dict[str, Any]:
@@ -156,10 +154,10 @@ class SESService:
         stats = self.ses.get_send_statistics()
 
         return {
-            'max_24_hour_send': quota['Max24HourSend'],
-            'max_send_rate': quota['MaxSendRate'],
-            'sent_last_24_hours': quota['SentLast24Hours'],
-            'send_data_points': stats.get('SendDataPoints', [])
+            "max_24_hour_send": quota["Max24HourSend"],
+            "max_send_rate": quota["MaxSendRate"],
+            "sent_last_24_hours": quota["SentLast24Hours"],
+            "send_data_points": stats.get("SendDataPoints", []),
         }
 
 

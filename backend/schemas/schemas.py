@@ -30,6 +30,7 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+
 # Task Schemas
 
 
@@ -57,6 +58,7 @@ class Task(TaskBase):
     class Config:
         from_attributes = True
 
+
 # Data Point Schemas
 
 
@@ -76,6 +78,7 @@ class DataPoint(DataPointBase):
 
     class Config:
         from_attributes = True
+
 
 # Response Schemas
 

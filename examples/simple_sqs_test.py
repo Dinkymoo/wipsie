@@ -17,10 +17,10 @@ def send_test_message():
 
     # SQS client with hardcoded credentials (for testing only)
     sqs = boto3.client(
-        'sqs',
-        region_name='eu-west-1',
-        aws_access_key_id='AKIAYCG3NTKVNJBJVWIH',
-        aws_secret_access_key='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'
+        "sqs",
+        region_name="eu-west-1",
+        aws_access_key_id="AKIAYCG3NTKVNJBJVWIH",
+        aws_secret_access_key="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",
     )
 
     # Message content
@@ -34,13 +34,14 @@ def send_test_message():
         "data": {
             "test_type": "api_integration",
             "priority": "high",
-            "description": "Testing SQS via FastAPI service"
-        }
+            "description": "Testing SQS via FastAPI service",
+        },
     }
 
     # Queue URL
-    queue_url = ("https://sqs.eu-west-1.amazonaws.com/"
-                 "554510949034/wipsie-default")
+    queue_url = (
+        "https://sqs.eu-west-1.amazonaws.com/" "554510949034/wipsie-default"
+    )
 
     try:
         # Send the message
@@ -48,19 +49,16 @@ def send_test_message():
             QueueUrl=queue_url,
             MessageBody=json.dumps(message_body),
             MessageAttributes={
-                'source': {
-                    'StringValue': 'fastapi_test',
-                    'DataType': 'String'
+                "source": {
+                    "StringValue": "fastapi_test",
+                    "DataType": "String",
                 },
-                'message_type': {
-                    'StringValue': 'api_test',
-                    'DataType': 'String'
+                "message_type": {
+                    "StringValue": "api_test",
+                    "DataType": "String",
                 },
-                'priority': {
-                    'StringValue': 'high',
-                    'DataType': 'String'
-                }
-            }
+                "priority": {"StringValue": "high", "DataType": "String"},
+            },
         )
 
         print("✅ Message sent successfully!")
@@ -69,11 +67,12 @@ def send_test_message():
         print(f"🆔 Task ID: {message_body['task_id']}")
         print(f"📍 Queue: {queue_url}")
 
-        return response['MessageId']
+        return response["MessageId"]
 
     except Exception as e:
         print(f"❌ Error sending message: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 

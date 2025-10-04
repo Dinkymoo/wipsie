@@ -24,9 +24,9 @@ def test_ses_configuration():
 
     # Check required environment variables
     required_vars = [
-        'AWS_ACCESS_KEY_ID',
-        'AWS_SECRET_ACCESS_KEY',
-        'AWS_REGION'
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_REGION",
     ]
     for var in required_vars:
         value = os.getenv(var)
@@ -62,7 +62,7 @@ def test_simple_email():
                     is working correctly! 🎉</p>
                 </body>
             </html>
-            """
+            """,
         )
 
         print("✅ Email sent successfully!")
@@ -87,7 +87,7 @@ def test_notification_email():
             notification_type="system_alert",
             title="Test System Alert",
             content="This is a test notification from the Wipsie system.",
-            priority="high"
+            priority="high",
         )
 
         print("✅ Notification email sent successfully!")
@@ -114,8 +114,8 @@ def test_task_completion_email():
             details={
                 "duration": "2 minutes",
                 "records_processed": 1000,
-                "output_file": "data_export_2024.csv"
-            }
+                "output_file": "data_export_2024.csv",
+            },
         )
 
         print("✅ Task completion email sent successfully!")
@@ -151,11 +151,13 @@ def main():
     verify_email_addresses()
 
     # Ask user if they want to proceed with actual email tests
-    response = input(
-        "\n❓ Do you want to run actual email tests? (y/n): "
-    ).lower().strip()
+    response = (
+        input("\n❓ Do you want to run actual email tests? (y/n): ")
+        .lower()
+        .strip()
+    )
 
-    if response != 'y':
+    if response != "y":
         print("⏭️  Skipping email tests. Update email addresses and run again.")
         return
 
@@ -181,8 +183,10 @@ def main():
     if tests_passed == total_tests:
         print("🎉 All SES integration tests passed!")
     else:
-        print("⚠️  Some tests failed. Check your SES configuration and "
-              "email verification.")
+        print(
+            "⚠️  Some tests failed. Check your SES configuration and "
+            "email verification."
+        )
 
 
 if __name__ == "__main__":

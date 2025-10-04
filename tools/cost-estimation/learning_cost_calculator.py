@@ -18,33 +18,33 @@ def calculate_learning_costs():
         "AWS Lambda": {
             "cost": 0.00,
             "limit": "1M requests/month",
-            "learning_note": "Perfect for learning serverless"
+            "learning_note": "Perfect for learning serverless",
         },
         "Amazon S3": {
             "cost": 0.00,
             "limit": "5GB storage + 20K requests",
-            "learning_note": "Host your frontend for free"
+            "learning_note": "Host your frontend for free",
         },
         "Amazon RDS (Free Tier)": {
             "cost": 0.00,
             "limit": "t3.micro, 20GB, 750 hours/month",
-            "learning_note": "12 months free for new accounts"
+            "learning_note": "12 months free for new accounts",
         },
         "Amazon SQS": {
             "cost": 0.00,
             "limit": "1M requests/month",
-            "learning_note": "Learn message queues for free"
+            "learning_note": "Learn message queues for free",
         },
         "Amazon SES": {
             "cost": 0.00,
             "limit": "62K emails/month (from EC2)",
-            "learning_note": "Email notifications covered"
+            "learning_note": "Email notifications covered",
         },
         "CloudFront": {
             "cost": 0.00,
             "limit": "1TB data transfer + 10M requests",
-            "learning_note": "CDN learning included"
-        }
+            "learning_note": "CDN learning included",
+        },
     }
 
     # Paid services (minimal usage)
@@ -52,7 +52,7 @@ def calculate_learning_costs():
         "GitHub Actions": {
             "cost": 0.00,
             "limit": "2000 minutes/month (public repos)",
-            "learning_note": "Free for public repositories"
+            "learning_note": "Free for public repositories",
         }
     }
 
@@ -74,7 +74,7 @@ def calculate_learning_costs():
         "🎯 Use t3.micro instances (Free Tier eligible)",
         "🎯 Make GitHub repo public (free Actions)",
         "🎯 Use minimal data sets for testing",
-        "🎯 Clean up resources after learning sessions"
+        "🎯 Clean up resources after learning sessions",
     ]
 
     for tip in optimizations:
@@ -97,7 +97,7 @@ def calculate_learning_costs():
         "Phase 1 - Free Tier": "$0/month - Learn basics",
         "Phase 2 - Small Scale": "$5-15/month - Real-world testing",
         "Phase 3 - Portfolio": "$15-30/month - Showcase projects",
-        "Phase 4 - Production Ready": "$50+/month - Job-ready skills"
+        "Phase 4 - Production Ready": "$50+/month - Job-ready skills",
     }
 
     for phase, cost in phases.items():

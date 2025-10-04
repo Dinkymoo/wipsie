@@ -16,10 +16,10 @@ class SQSService:
 
     def __init__(self):
         self.sqs = boto3.client(
-            'sqs',
+            "sqs",
             region_name=settings.AWS_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
         # Queue URLs
@@ -27,17 +27,17 @@ class SQSService:
         region = settings.AWS_REGION
         base_url = f"https://sqs.{region}.amazonaws.com/{aws_account}"
         self.queue_urls = {
-            'default': f"{base_url}/wipsie-default",
-            'data_polling': f"{base_url}/wipsie-data-polling",
-            'task_processing': f"{base_url}/wipsie-task-processing",
-            'notifications': f"{base_url}/wipsie-notifications"
+            "default": f"{base_url}/wipsie-default",
+            "data_polling": f"{base_url}/wipsie-data-polling",
+            "task_processing": f"{base_url}/wipsie-task-processing",
+            "notifications": f"{base_url}/wipsie-notifications",
         }
 
     def send_message(
         self,
         queue_name: str,
         message_body: Dict[str, Any],
-        message_attributes: Optional[Dict[str, Any]] = None
+        message_attributes: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Send a message to the specified SQS queue"""
 
@@ -47,41 +47,32 @@ class SQSService:
         queue_url = self.queue_urls[queue_name]
 
         # Add timestamp to message
-        message_body['timestamp'] = datetime.now().isoformat()
-        message_body['queue'] = queue_name
+        message_body["timestamp"] = datetime.now().isoformat()
+        message_body["queue"] = queue_name
 
         # Prepare message attributes
         attrs = {
-            'source': {
-                'StringValue': 'fastapi',
-                'DataType': 'String'
-            },
-            'queue_name': {
-                'StringValue': queue_name,
-                'DataType': 'String'
-            }
+            "source": {"StringValue": "fastapi", "DataType": "String"},
+            "queue_name": {"StringValue": queue_name, "DataType": "String"},
         }
 
         if message_attributes:
             for key, value in message_attributes.items():
-                attrs[key] = {
-                    'StringValue': str(value),
-                    'DataType': 'String'
-                }
+                attrs[key] = {"StringValue": str(value), "DataType": "String"}
 
         # Send message
         response = self.sqs.send_message(
             QueueUrl=queue_url,
             MessageBody=json.dumps(message_body),
-            MessageAttributes=attrs
+            MessageAttributes=attrs,
         )
 
         return {
-            'message_id': response['MessageId'],
-            'queue': queue_name,
-            'queue_url': queue_url,
-            'status': 'sent',
-            'timestamp': message_body['timestamp']
+            "message_id": response["MessageId"],
+            "queue": queue_name,
+            "queue_url": queue_url,
+            "status": "sent",
+            "timestamp": message_body["timestamp"],
         }
 
     def receive_messages(self, queue_name: str, max_messages: int = 5) -> list:
@@ -96,17 +87,19 @@ class SQSService:
             QueueUrl=queue_url,
             MaxNumberOfMessages=max_messages,
             WaitTimeSeconds=2,
-            MessageAttributeNames=['All']
+            MessageAttributeNames=["All"],
         )
 
         messages = []
-        for msg in response.get('Messages', []):
-            messages.append({
-                'message_id': msg['MessageId'],
-                'body': json.loads(msg['Body']),
-                'attributes': msg.get('MessageAttributes', {}),
-                'receipt_handle': msg['ReceiptHandle']
-            })
+        for msg in response.get("Messages", []):
+            messages.append(
+                {
+                    "message_id": msg["MessageId"],
+                    "body": json.loads(msg["Body"]),
+                    "attributes": msg.get("MessageAttributes", {}),
+                    "receipt_handle": msg["ReceiptHandle"],
+                }
+            )
 
         return messages
 
@@ -119,8 +112,7 @@ class SQSService:
         queue_url = self.queue_urls[queue_name]
 
         self.sqs.delete_message(
-            QueueUrl=queue_url,
-            ReceiptHandle=receipt_handle
+            QueueUrl=queue_url, ReceiptHandle=receipt_handle
         )
 
 

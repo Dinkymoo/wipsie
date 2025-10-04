@@ -16,20 +16,20 @@ def calculate_deployment_costs():
     scenarios = {
         "Conservative (1/week)": {
             "deploys_per_month": 4,
-            "description": "Weekly releases, careful testing"
+            "description": "Weekly releases, careful testing",
         },
         "Moderate (2/week)": {
             "deploys_per_month": 8,
-            "description": "Bi-weekly releases, regular updates"
+            "description": "Bi-weekly releases, regular updates",
         },
         "Agile (daily)": {
             "deploys_per_month": 22,
-            "description": "Daily deployments, CI/CD"
+            "description": "Daily deployments, CI/CD",
         },
         "Heavy (multiple/day)": {
             "deploys_per_month": 60,
-            "description": "Multiple daily deployments"
-        }
+            "description": "Multiple daily deployments",
+        },
     }
 
     print("🚀 Deployment Cost Analysis")

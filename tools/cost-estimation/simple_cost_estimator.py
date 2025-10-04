@@ -14,7 +14,7 @@ def get_cost_estimates() -> Dict[str, Dict[str, float]]:
     return {
         "learning": {
             "AWS Lambda": 0.00,  # Free tier
-            "Amazon S3": 0.00,   # Free tier
+            "Amazon S3": 0.00,  # Free tier
             "Amazon RDS": 0.00,  # Free tier (t3.micro)
             "Amazon SQS": 0.00,  # Free tier
             "Amazon SES": 0.00,  # Free tier
@@ -47,7 +47,7 @@ def get_cost_estimates() -> Dict[str, Dict[str, float]]:
             "Amazon SES": 5.00,
             "CloudFront": 20.00,
             "GitHub Actions": 10.00,  # Regular deployments
-        }
+        },
     }
 
 

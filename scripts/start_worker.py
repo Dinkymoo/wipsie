@@ -27,15 +27,17 @@ def start_worker():
     print()
 
     # Start worker with optimized settings
-    celery_app.worker_main([
-        'worker',
-        '--loglevel=info',
-        '--concurrency=4',
-        '--max-tasks-per-child=1000',
-        '--time-limit=300',
-        '--soft-time-limit=240'
-    ])
+    celery_app.worker_main(
+        [
+            "worker",
+            "--loglevel=info",
+            "--concurrency=4",
+            "--max-tasks-per-child=1000",
+            "--time-limit=300",
+            "--soft-time-limit=240",
+        ]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start_worker()

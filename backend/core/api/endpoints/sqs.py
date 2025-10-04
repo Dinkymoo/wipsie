@@ -32,7 +32,7 @@ async def send_message(request: SendMessageRequest):
         result = sqs_service.send_message(
             queue_name=request.queue_name,
             message_body=request.message,
-            message_attributes=request.attributes
+            message_attributes=request.attributes,
         )
         return MessageResponse(**result)
     except ValueError as e:
@@ -50,7 +50,7 @@ async def receive_messages(queue_name: str, max_messages: int = 5):
         return {
             "queue": queue_name,
             "message_count": len(messages),
-            "messages": messages
+            "messages": messages,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -77,7 +77,7 @@ async def list_queues():
     """List available SQS queues"""
     return {
         "available_queues": list(sqs_service.queue_urls.keys()),
-        "region": "eu-west-1"
+        "region": "eu-west-1",
     }
 
 
@@ -90,8 +90,8 @@ async def send_test_message():
         "source": "api_test",
         "data": {
             "test_id": "api-test-001",
-            "description": "Testing SQS integration via FastAPI"
-        }
+            "description": "Testing SQS integration via FastAPI",
+        },
     }
 
     try:
@@ -99,7 +99,7 @@ async def send_test_message():
         return {
             "status": "success",
             "test_message": test_message,
-            "result": result
+            "result": result,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
@@ -117,19 +117,18 @@ async def get_queue_info(queue_name: str):
 
         # Get queue attributes
         response = sqs_service.sqs.get_queue_attributes(
-            QueueUrl=queue_url,
-            AttributeNames=['All']
+            QueueUrl=queue_url, AttributeNames=["All"]
         )
 
-        attrs = response['Attributes']
+        attrs = response["Attributes"]
 
         # Convert retention period to human readable
-        retention_seconds = int(attrs.get('MessageRetentionPeriod', 1209600))
+        retention_seconds = int(attrs.get("MessageRetentionPeriod", 1209600))
         retention_days = retention_seconds // 86400
         retention_hours = (retention_seconds % 86400) // 3600
 
         # Convert visibility timeout
-        visibility_timeout = int(attrs.get('VisibilityTimeoutSeconds', 30))
+        visibility_timeout = int(attrs.get("VisibilityTimeoutSeconds", 30))
 
         return {
             "queue_name": queue_name,
@@ -138,23 +137,23 @@ async def get_queue_info(queue_name: str):
                 "total_seconds": retention_seconds,
                 "days": retention_days,
                 "hours": retention_hours,
-                "human_readable": f"{retention_days} days, {retention_hours} hours"
+                "human_readable": f"{retention_days} days, {retention_hours} hours",
             },
             "visibility_timeout_seconds": visibility_timeout,
             "messages_available": int(
-                attrs.get('ApproximateNumberOfMessages', 0)
+                attrs.get("ApproximateNumberOfMessages", 0)
             ),
             "messages_in_flight": int(
-                attrs.get('ApproximateNumberOfMessagesNotVisible', 0)
+                attrs.get("ApproximateNumberOfMessagesNotVisible", 0)
             ),
             "receive_wait_time_seconds": int(
-                attrs.get('ReceiveMessageWaitTimeSeconds', 0)
+                attrs.get("ReceiveMessageWaitTimeSeconds", 0)
             ),
             "has_dead_letter_queue": "RedrivePolicy" in attrs,
-            "created_timestamp": attrs.get('CreatedTimestamp', 'Unknown'),
+            "created_timestamp": attrs.get("CreatedTimestamp", "Unknown"),
             "last_modified_timestamp": attrs.get(
-                'LastModifiedTimestamp', 'Unknown'
-            )
+                "LastModifiedTimestamp", "Unknown"
+            ),
         }
 
     except ValueError as e:

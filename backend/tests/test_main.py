@@ -50,6 +50,7 @@ class TestBasicFunctionality:
     def test_app_imports(self):
         """Test that we can import the main app."""
         from backend.main import app
+
         assert app is not None
 
     def test_database_models_import(self):
@@ -67,6 +68,7 @@ class TestBasicFunctionality:
         """Test that we can import database configuration."""
         try:
             from backend.db.database import get_db
+
             assert get_db is not None
         except ImportError:
             # Database might not be fully configured yet

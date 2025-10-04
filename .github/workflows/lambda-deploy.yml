@@ -36,7 +36,7 @@ jobs:
       run: |
         cd aws-lambda
         pip install -r requirements.txt
-        pip install pytest boto3 moto
+        pip install pytest boto3 moto flake8
     
     - name: 🧪 Run Lambda Tests
       run: |

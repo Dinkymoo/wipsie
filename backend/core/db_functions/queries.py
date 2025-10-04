@@ -3,11 +3,28 @@ Common database query utilities and helpers.
 """
 
 import logging
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+)
 
-from sqlalchemy import asc, desc, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Query, Session
+from sqlalchemy import (
+    asc,
+    desc,
+    or_,
+)
+from sqlalchemy.exc import (
+    SQLAlchemyError,
+)
+from sqlalchemy.orm import (
+    Query,
+    Session,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -3,12 +3,20 @@ SQS service for sending and receiving messages
 """
 
 import json
-from datetime import datetime
-from typing import Any, Dict, Optional
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 
 import boto3
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 
 class SQSService:

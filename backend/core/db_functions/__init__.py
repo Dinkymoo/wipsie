@@ -15,7 +15,9 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import (
+    SQLAlchemyError,
+)
 from sqlalchemy.orm import (
     Session,
     declarative_base,
@@ -31,7 +33,10 @@ from .queries import (
 )
 
 # Import our custom modules
-from .session import get_db, get_db_session
+from .session import (
+    get_db,
+    get_db_session,
+)
 from .utils import (
     check_table_exists,
     execute_raw_sql,

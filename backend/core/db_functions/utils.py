@@ -3,11 +3,23 @@ Database migration and schema utilities.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+)
 
-from sqlalchemy import inspect, text
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy import (
+    inspect,
+    text,
+)
+from sqlalchemy.exc import (
+    SQLAlchemyError,
+)
+from sqlalchemy.orm import (
+    Session,
+)
 
 logger = logging.getLogger(__name__)
 

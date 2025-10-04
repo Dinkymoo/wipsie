@@ -2,12 +2,21 @@
 Amazon SES (Simple Email Service) integration
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+)
 
 import boto3
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 
 class SESService:

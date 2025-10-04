@@ -11,7 +11,9 @@ class TestUserService:
     def test_user_service_import(self):
         """Test that user service can be imported."""
         try:
-            from backend.services.user_service import UserService
+            from backend.services.user_service import (
+                UserService,
+            )
 
             assert UserService is not None
         except ImportError:
@@ -20,7 +22,9 @@ class TestUserService:
     def test_user_service_basic_functionality(self):
         """Test basic user service functionality if available."""
         try:
-            from backend.services.user_service import UserService
+            from backend.services.user_service import (
+                UserService,
+            )
 
             # Basic instantiation test
             service = UserService()
@@ -36,7 +40,9 @@ class TestTaskService:
     def test_task_service_import(self):
         """Test that task service can be imported."""
         try:
-            from backend.services.task_service import TaskService
+            from backend.services.task_service import (
+                TaskService,
+            )
 
             assert TaskService is not None
         except ImportError:
@@ -45,7 +51,9 @@ class TestTaskService:
     def test_task_service_basic_functionality(self):
         """Test basic task service functionality if available."""
         try:
-            from backend.services.task_service import TaskService
+            from backend.services.task_service import (
+                TaskService,
+            )
 
             # Basic instantiation test
             service = TaskService()
@@ -61,7 +69,9 @@ class TestDataPointService:
     def test_data_point_service_import(self):
         """Test that data point service can be imported."""
         try:
-            from backend.services.data_point_service import DataPointService
+            from backend.services.data_point_service import (
+                DataPointService,
+            )
 
             assert DataPointService is not None
         except ImportError:
@@ -70,7 +80,9 @@ class TestDataPointService:
     def test_data_point_service_basic_functionality(self):
         """Test basic data point service functionality if available."""
         try:
-            from backend.services.data_point_service import DataPointService
+            from backend.services.data_point_service import (
+                DataPointService,
+            )
 
             # Basic instantiation test
             service = DataPointService()
@@ -86,7 +98,9 @@ class TestLambdaService:
     def test_lambda_service_import(self):
         """Test that Lambda service can be imported."""
         try:
-            from backend.services.lambda_service import LambdaService
+            from backend.services.lambda_service import (
+                LambdaService,
+            )
 
             assert LambdaService is not None
         except ImportError:
@@ -95,7 +109,9 @@ class TestLambdaService:
     def test_lambda_service_basic_functionality(self):
         """Test basic Lambda service functionality if available."""
         try:
-            from backend.services.lambda_service import LambdaService
+            from backend.services.lambda_service import (
+                LambdaService,
+            )
 
             # Basic instantiation test
             service = LambdaService()
@@ -111,7 +127,9 @@ class TestCeleryTasks:
     def test_tasks_import(self):
         """Test that tasks module can be imported."""
         try:
-            from backend.services import tasks
+            from backend.services import (
+                tasks,
+            )
 
             assert tasks is not None
         except ImportError:
@@ -120,7 +138,9 @@ class TestCeleryTasks:
     def test_celery_app_import(self):
         """Test that Celery app can be imported."""
         try:
-            from backend.core.celery_app import celery_app
+            from backend.core.celery_app import (
+                celery_app,
+            )
 
             assert celery_app is not None
         except ImportError:
@@ -166,7 +186,9 @@ class TestServiceIntegration:
     def test_schema_integration(self):
         """Test that services integrate with schemas."""
         try:
-            from backend.schemas import schemas
+            from backend.schemas import (
+                schemas,
+            )
 
             assert schemas is not None
         except ImportError:

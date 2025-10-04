@@ -2,10 +2,20 @@
 SES data models and schemas
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+)
 
-from pydantic import BaseModel, EmailStr
+from pydantic import (
+    BaseModel,
+    EmailStr,
+)
 
 
 class EmailMessage(BaseModel):

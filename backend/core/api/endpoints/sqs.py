@@ -2,12 +2,23 @@
 API endpoints for SQS messaging
 """
 
-from typing import Any, Dict, Optional
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import (
+    APIRouter,
+    HTTPException,
+)
+from pydantic import (
+    BaseModel,
+)
 
-from backend.services.aws.sqs.service import sqs_service
+from backend.services.aws.sqs.service import (
+    sqs_service,
+)
 
 router = APIRouter(prefix="/sqs", tags=["SQS"])
 

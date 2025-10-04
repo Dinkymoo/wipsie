@@ -4,11 +4,17 @@ Handle email sending, notifications, and communication
 """
 
 import logging
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
-from backend.services.aws.ses.service import ses_service
+from backend.services.aws.ses.service import (
+    ses_service,
+)
 
-from ..celery_app import app
+from ..celery_app import (
+    app,
+)
 
 logger = logging.getLogger(__name__)
 

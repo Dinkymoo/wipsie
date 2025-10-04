@@ -5,11 +5,17 @@ Centralized Celery setup with SQS broker
 """
 
 import logging
-from urllib.parse import quote_plus
+from urllib.parse import (
+    quote_plus,
+)
 
-from celery import Celery
+from celery import (
+    Celery,
+)
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

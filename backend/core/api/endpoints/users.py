@@ -1,11 +1,28 @@
-from typing import List
+from typing import (
+    List,
+)
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from sqlalchemy.orm import (
+    Session,
+)
 
-from backend.db.database import get_db
-from backend.schemas.schemas import User, UserCreate, UserUpdate
-from backend.services.user_service import UserService
+from backend.db.database import (
+    get_db,
+)
+from backend.schemas.schemas import (
+    User,
+    UserCreate,
+    UserUpdate,
+)
+from backend.services.user_service import (
+    UserService,
+)
 
 router = APIRouter()
 

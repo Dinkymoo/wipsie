@@ -1,7 +1,13 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import (
+    FastAPI,
+)
+from fastapi.middleware.cors import (
+    CORSMiddleware,
+)
 
-from backend.api.endpoints import sqs
+from backend.api.endpoints import (
+    sqs,
+)
 
 app = FastAPI(
     title="Wipsie Full Stack API",

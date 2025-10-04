@@ -3,7 +3,9 @@ Basic test for the FastAPI application.
 """
 
 import pytest
-from fastapi.testclient import TestClient
+from fastapi.testclient import (
+    TestClient,
+)
 
 
 def test_health_check(client: TestClient):
@@ -49,7 +51,9 @@ class TestBasicFunctionality:
 
     def test_app_imports(self):
         """Test that we can import the main app."""
-        from backend.main import app
+        from backend.main import (
+            app,
+        )
 
         assert app is not None
 
@@ -67,7 +71,9 @@ class TestBasicFunctionality:
     def test_database_connection_import(self):
         """Test that we can import database configuration."""
         try:
-            from backend.db.database import get_db
+            from backend.db.database import (
+                get_db,
+            )
 
             assert get_db is not None
         except ImportError:

@@ -1,7 +1,14 @@
-from datetime import datetime
-from typing import Optional
+from datetime import (
+    datetime,
+)
+from typing import (
+    Optional,
+)
 
-from pydantic import BaseModel, EmailStr
+from pydantic import (
+    BaseModel,
+    EmailStr,
+)
 
 # User Schemas
 

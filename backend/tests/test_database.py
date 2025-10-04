@@ -3,7 +3,9 @@ Test the database functionality.
 """
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import (
+    text,
+)
 
 
 def test_database_connection(db_session):
@@ -44,7 +46,10 @@ class TestDatabaseConfiguration:
     def test_database_import(self):
         """Test that we can import database modules."""
         try:
-            from backend.db.database import engine, get_db
+            from backend.db.database import (
+                engine,
+                get_db,
+            )
 
             assert get_db is not None
             assert engine is not None
@@ -54,7 +59,9 @@ class TestDatabaseConfiguration:
     def test_models_import(self):
         """Test that we can import model modules."""
         try:
-            from backend.models.models import Base
+            from backend.models.models import (
+                Base,
+            )
 
             assert Base is not None
         except ImportError:

@@ -1,6 +1,10 @@
-from celery import Celery
+from celery import (
+    Celery,
+)
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 # Create Celery instance
 celery_app = Celery(

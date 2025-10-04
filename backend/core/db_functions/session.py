@@ -3,13 +3,23 @@ Database session management utilities.
 """
 
 import logging
-from contextlib import contextmanager
-from typing import Generator
+from contextlib import (
+    contextmanager,
+)
+from typing import (
+    Generator,
+)
 
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import (
+    SQLAlchemyError,
+)
+from sqlalchemy.orm import (
+    Session,
+)
 
-from backend.db.database import SessionLocal
+from backend.db.database import (
+    SessionLocal,
+)
 
 logger = logging.getLogger(__name__)
 

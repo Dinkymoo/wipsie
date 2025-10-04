@@ -2,10 +2,18 @@
 SQS data models and schemas
 """
 
-from datetime import datetime
-from typing import Any, Dict, Optional
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+)
 
 
 class SQSMessage(BaseModel):

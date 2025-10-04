@@ -5,9 +5,13 @@ Handle data polling, collection, and analysis
 
 import json
 import logging
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
-from ..celery_app import app
+from ..celery_app import (
+    app,
+)
 
 logger = logging.getLogger(__name__)
 

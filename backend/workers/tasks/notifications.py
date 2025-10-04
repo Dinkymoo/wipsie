@@ -4,10 +4,17 @@ Handle various types of notifications and alerts
 """
 
 import logging
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
-from ..celery_app import app
-from .email import send_notification_email, send_task_completion_email
+from ..celery_app import (
+    app,
+)
+from .email import (
+    send_notification_email,
+    send_task_completion_email,
+)
 
 logger = logging.getLogger(__name__)
 

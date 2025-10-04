@@ -1,11 +1,19 @@
 import asyncio
 import json
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List
+from concurrent.futures import (
+    ThreadPoolExecutor,
+)
+from typing import (
+    Any,
+    Dict,
+    List,
+)
 
 import boto3
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 
 class LambdaService:

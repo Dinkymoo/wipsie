@@ -1,9 +1,18 @@
-from typing import List, Optional
+from typing import (
+    List,
+    Optional,
+)
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+)
 
-from backend.models.models import DataPoint
-from backend.schemas.schemas import DataPointCreate
+from backend.models.models import (
+    DataPoint,
+)
+from backend.schemas.schemas import (
+    DataPointCreate,
+)
 
 
 class DataPointService:

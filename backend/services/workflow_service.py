@@ -5,7 +5,11 @@ Demonstrates how workflow orchestration could work within existing services
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import (
+    Any,
+    Dict,
+    List,
+)
 
 logger = logging.getLogger(__name__)
 

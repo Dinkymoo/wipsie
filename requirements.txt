@@ -25,6 +25,7 @@ python-multipart>=0.0.18  # Security update for CVE-2024-53981
 
 # Configuration
 pydantic==2.5.0
+pydantic-settings==2.0.3
 python-dotenv==1.0.0
 
 # HTTP Client

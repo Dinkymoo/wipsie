@@ -6,6 +6,7 @@ Celery worker to process SQS messages using organized AWS services
 import json
 import logging
 from datetime import datetime
+from urllib.parse import quote_plus
 
 from celery import Celery
 
@@ -20,9 +21,13 @@ logger = logging.getLogger(__name__)
 # Create Celery app
 app = Celery('wipsie_worker')
 
+# URL encode AWS credentials for broker URL
+encoded_access_key = quote_plus(settings.AWS_ACCESS_KEY_ID or "")
+encoded_secret_key = quote_plus(settings.AWS_SECRET_ACCESS_KEY or "")
+
 # Configure Celery to use SQS as broker
 app.conf.update(
-    broker_url=f'sqs://{settings.AWS_ACCESS_KEY_ID}:{settings.AWS_SECRET_ACCESS_KEY}@',
+    broker_url=f'sqs://{encoded_access_key}:{encoded_secret_key}@',
     broker_transport_options={
         'region': settings.AWS_REGION,
         'predefined_queues': {
@@ -42,12 +47,14 @@ app.conf.update(
     },
     task_default_queue='wipsie-default',
     task_routes={
-        'worker.process_data_polling': {'queue': 'wipsie-data-polling'},
-        'worker.process_task': {'queue': 'wipsie-task-processing'},
-        'worker.send_notification': {'queue': 'wipsie-notifications'},
+        'celery_worker.process_data_polling': {'queue': 'wipsie-data-polling'},
+        'celery_worker.process_task': {'queue': 'wipsie-task-processing'},
+        'celery_worker.send_notification': {'queue': 'wipsie-notifications'},
+        'celery_worker.notify_task_completion': {'queue': 'wipsie-notifications'},
+        'celery_worker.process_email_queue': {'queue': 'wipsie-notifications'},
     },
-    # Results backend (optional - you can use Redis or database)
-    result_backend='rpc://',
+    # Disable results backend to avoid queue creation issues
+    result_backend=None,
     # Task serialization
     task_serializer='json',
     accept_content=['json'],

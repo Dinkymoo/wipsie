@@ -7,7 +7,7 @@ You now have a **complete, production-ready full-stack application** with:
 ### 🎯 **Core Technologies**
 - **Backend**: Python FastAPI with async support
 - **Frontend**: Angular 17 (ready to be created)
-- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Database**: PostgreSQL with SQLAlchemy ORM + 🆕 **Advanced DB utilities**
 - **Cache/Message Broker**: Amazon SQS (with optional Redis for caching)
 - **Background Tasks**: Celery with SQS
 - **Cloud Functions**: AWS Lambda
@@ -41,10 +41,13 @@ wipsie/
 ├── 🐍 backend/                # FastAPI application
 │   ├── api/endpoints/         # REST API endpoints
 │   ├── core/                  # Configuration & Celery
+│   │   └── db_functions/      # 🆕 Advanced SQLAlchemy utilities
 │   ├── db/                    # Database setup
 │   ├── models/                # SQLAlchemy models
 │   ├── schemas/               # Pydantic schemas
 │   ├── services/              # Business logic
+│   ├── workers/               # Celery worker modules
+│   ├── alembic/               # Database migrations
 │   └── main.py               # FastAPI app entry point
 ├── 🅰️ frontend/               # Angular application
 ├── ☁️ aws-lambda/             # Serverless functions
@@ -61,11 +64,31 @@ wipsie/
 - **RESTful API** with automatic OpenAPI documentation
 - **Database Models**: Users, Tasks, DataPoints
 - **CRUD Operations** for all entities
+- **🆕 Advanced Database Layer**: Repository pattern with comprehensive utilities
 - **Background Tasks** with Celery and Amazon SQS
 - **AWS Lambda Integration**
 - **Redis Caching** (optional)
 - **CORS Configuration**
 - **Environment-based Configuration**
+
+### ✅ **🆕 Database Functions Module**
+- **Session Management**: Context managers and FastAPI dependencies
+- **Repository Pattern**: Generic CRUD operations with `BaseRepository`
+- **Query Utilities**: Advanced filtering, searching, and ordering
+- **Admin Tools**: Table management, raw SQL execution, maintenance
+- **Error Handling**: Comprehensive error recovery and logging
+- **Type Safety**: Full type hints throughout
+
+```python
+# Example usage of new database utilities
+from backend.core.db_functions import get_db_session, BaseRepository
+from backend.models import User
+
+with get_db_session() as db:
+    user_repo = BaseRepository(User, db)
+    users = user_repo.get_all(skip=0, limit=10)
+    user = user_repo.create({"username": "john", "email": "john@example.com"})
+```
 
 ### ✅ **API Endpoints Available**
 - `GET /` - Welcome message

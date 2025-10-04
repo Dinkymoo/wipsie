@@ -25,13 +25,24 @@ wipsie/
 │
 ├── 💻 Application Code
 │   ├── backend/                # FastAPI backend application
+│   │   ├── core/               # Core application components
+│   │   │   ├── config.py       # Application settings
+│   │   │   ├── celery_app.py   # Celery configuration
+│   │   │   └── db_functions/   # 🆕 SQLAlchemy ORM utilities
+│   │   │       ├── session.py  # Database session management
+│   │   │       ├── queries.py  # Repository pattern & query utils
+│   │   │       └── utils.py    # Database admin utilities
+│   │   ├── models/             # SQLAlchemy data models
+│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── services/           # Business logic services
+│   │   ├── workers/            # Celery worker modules
+│   │   └── alembic/            # Database migrations
 │   ├── frontend/               # Angular frontend application
 │   └── scripts/                # Utility scripts
 │
 ├── 🐳 Infrastructure
 │   ├── docker/                 # Docker configurations
-│   ├── aws-lambda/             # Serverless functions
-│   └── alembic/                # Database migrations
+│   └── aws-lambda/             # Serverless functions
 │
 ├── 🛠️  Development Tools
 │   ├── tools/                  # AWS management utilities
@@ -70,11 +81,32 @@ wipsie/
 
 - **Frontend**: Angular with TypeScript
 - **Backend**: FastAPI with Python
-- **Database**: PostgreSQL with SQLAlchemy
+- **Database**: PostgreSQL with SQLAlchemy + 🆕 **Custom ORM utilities**
 - **Cache**: Redis
 - **Queue**: AWS SQS with Celery workers
 - **Email**: AWS SES
 - **Deployment**: Docker with Nginx reverse proxy
+- **🆕 Database Layer**: Comprehensive SQLAlchemy utilities with repository pattern
+
+### 🆕 Database Functions Module
+
+The new `backend/core/db_functions/` provides:
+
+- **Session Management**: Context managers and FastAPI dependencies
+- **Repository Pattern**: Generic CRUD operations with `BaseRepository`
+- **Query Utilities**: Advanced filtering, searching, and ordering
+- **Admin Tools**: Table management, raw SQL execution, maintenance
+
+```python
+# Example usage
+from backend.core.db_functions import get_db_session, BaseRepository
+from backend.models import User
+
+with get_db_session() as db:
+    user_repo = BaseRepository(User, db)
+    user = user_repo.get(1)
+    users = user_repo.get_all(skip=0, limit=10)
+```
 
 ## 📊 Features
 
@@ -86,6 +118,9 @@ wipsie/
 ✅ **Docker Orchestration**  
 ✅ **Development Tools**  
 ✅ **Production Ready**  
+✅ 🆕 **Advanced Database Layer** - SQLAlchemy utilities with repository pattern  
+✅ 🆕 **Modular Architecture** - Clean separation of concerns  
+✅ 🆕 **Comprehensive Error Handling** - Robust database operations  
 
 ## 🔧 Development
 

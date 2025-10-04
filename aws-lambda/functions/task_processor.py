@@ -1,8 +1,14 @@
 import json
 import os
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+)
+
 import requests
-from datetime import datetime
-from typing import Dict, Any
 
 
 def lambda_handler(event, context):

@@ -42,7 +42,7 @@ def simulate_lambda_context():
     return MockContext()
 
 
-def test_lambda_function(function_name, event):
+def run_lambda_function(function_name, event):
     """Test a Lambda function locally"""
     print(f"🧪 Testing Lambda function: {function_name}")
     print(f"📝 Event: {json.dumps(event, indent=2)}")
@@ -80,6 +80,59 @@ def test_lambda_function(function_name, event):
         return None
 
 
+# ===== PYTEST TESTS =====
+
+def test_data_poller_weather():
+    """Test data poller with weather source"""
+    event = {"source": "weather"}
+    result = run_lambda_function("data_poller", event)
+    assert result is not None
+
+
+def test_data_poller_stocks():
+    """Test data poller with stocks source"""
+    event = {"source": "stocks"}
+    result = run_lambda_function("data_poller", event)
+    assert result is not None
+
+
+def test_data_poller_unknown():
+    """Test data poller with unknown source"""
+    event = {"source": "unknown"}
+    result = run_lambda_function("data_poller", event)
+    # Should still return something, even if it's an error response
+    assert result is not None
+
+
+def test_task_processor_email():
+    """Test task processor with email notification"""
+    event = {
+        "task_data": {
+            "type": "email_notification",
+            "id": "task-001",
+            "recipient": "test@example.com",
+            "subject": "Test Email",
+            "message": "This is a test message",
+        }
+    }
+    result = run_lambda_function("task_processor", event)
+    assert result is not None
+
+
+def test_task_processor_data_analysis():
+    """Test task processor with data analysis"""
+    event = {
+        "task_data": {
+            "type": "data_analysis",
+            "id": "task-002",
+            "dataset_id": "dataset-123",
+            "analysis_type": "statistical",
+        }
+    }
+    result = run_lambda_function("task_processor", event)
+    assert result is not None
+
+
 def main():
     """Main function to run tests"""
     print("🚀 Wipsie Lambda Local Tester")
@@ -95,7 +148,7 @@ def main():
     ]
 
     for event in test_events:
-        test_lambda_function("data_poller", event)
+        run_lambda_function("data_poller", event)
         print()
 
     # Test Task Processor Function
@@ -139,7 +192,7 @@ def main():
     ]
 
     for event in task_events:
-        test_lambda_function("task_processor", event)
+        run_lambda_function("task_processor", event)
         print()
 
     print("🎉 All tests completed!")

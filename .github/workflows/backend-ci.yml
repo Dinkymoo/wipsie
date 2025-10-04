@@ -1,0 +1,279 @@
+name: 🚀 Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, feat/*]
+    paths:
+      - "backend/**"
+      - "requirements.txt"
+      - "docker/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - "requirements.txt"
+      - "docker/**"
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "18"
+
+jobs:
+  # ===============================================
+  # 🧪 TESTING & CODE QUALITY
+  # ===============================================
+  test:
+    name: 🧪 Test Backend
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres_test_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: wipsie_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio black isort flake8 mypy safety bandit
+          # Install project in editable mode to ensure proper module discovery
+          pip install -e .
+
+      - name: 🎨 Check Python code formatting with Black
+        run: |
+          echo "🎨 Checking code formatting with Black..."
+          black --check --line-length 79 --extend-exclude="aws-lambda/packages|venv_container|\.venv|node_modules" backend/
+
+      - name: 📦 Check imports with isort
+        run: |
+          echo "📦 Checking imports with isort..."
+          isort --check-only --diff backend/
+
+      - name: 🔍 Lint with Flake8
+        run: |
+          echo "🔍 Running Flake8 linting..."
+          flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 backend/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+      - name: 🔎 Type Checking with MyPy
+        run: |
+          echo "🔎 Running MyPy type checking..."
+          mypy backend/ --ignore-missing-imports || true
+
+      - name: 🔒 Security Scan
+        run: |
+          echo "🔒 Running security checks..."
+          safety scan --policy-file .safety-policy.json --output json --save-as security-report.json || true
+          bandit -r backend/ -f json -o bandit-report.json || true
+          echo "✅ Security scan completed - reports generated"
+
+      - name: 📤 Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            security-report.json
+            bandit-report.json
+          retention-days: 30
+        if: always()
+
+      - name: 🗄️ Set up Database
+        run: |
+          export DATABASE_URL="postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test"
+          export REDIS_URL="redis://localhost:6379"
+
+          echo "🗄️ Running database migrations..."
+          alembic upgrade head
+        env:
+          DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: 🧪 Run Tests
+        run: |
+          echo "🧪 Running backend tests with coverage..."
+          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+          pytest -v --cov=backend --cov-report=xml --cov-report=html
+        env:
+          DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
+          REDIS_URL: redis://localhost:6379
+          ENVIRONMENT: testing
+
+      - name: 📊 Upload Coverage Reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      - name: 📤 Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov/
+          retention-days: 30
+        if: always()
+
+  # ===============================================
+  # 🐳 DOCKER BUILD & PUSH
+  # ===============================================
+  build:
+    name: 🐳 Build Docker Images
+    runs-on: ubuntu-latest
+    needs: test
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Login to Docker Hub
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏷️ Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/wipsie-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🔨 Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  # ===============================================
+  # 🚀 DEPLOY TO STAGING
+  # ===============================================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🚀 Deploy to ECS/Fargate
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          # Add your deployment commands here
+          # Example: aws ecs update-service --cluster staging --service wipsie-backend --force-new-deployment
+
+      - name: 🌐 Update Load Balancer
+        run: |
+          echo "🌐 Updating load balancer configuration..."
+          # Add load balancer update commands here
+
+      - name: ✅ Health Check
+        run: |
+          echo "✅ Running health checks..."
+          # Add health check commands here
+          # curl -f https://staging-api.wipsie.com/health || exit 1
+
+  # ===============================================
+  # 🌟 DEPLOY TO PRODUCTION
+  # ===============================================
+  deploy-production:
+    name: 🌟 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🚀 Deploy to Production ECS
+        run: |
+          echo "🚀 Deploying to production environment..."
+          # Add your production deployment commands here
+
+      - name: 🌐 Update Production Load Balancer
+        run: |
+          echo "🌐 Updating production load balancer..."
+          # Add production load balancer update commands
+
+      - name: ✅ Production Health Check
+        run: |
+          echo "✅ Running production health checks..."
+          # Add production health check commands
+          # curl -f https://api.wipsie.com/health || exit 1
+
+      - name: 📢 Notify Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: "#deployments"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()

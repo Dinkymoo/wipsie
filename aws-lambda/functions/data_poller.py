@@ -1,5 +1,4 @@
 import json
-import boto3
 import requests
 import os
 from datetime import datetime
@@ -86,7 +85,8 @@ def poll_weather_data(api_key: str) -> Dict[str, Any]:
                 }
             else:
                 response = requests.get(
-                    f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric",
+                    f"https://api.openweathermap.org/data/2.5/weather"
+                    f"?q={city}&appid={api_key}&units=metric",
                     timeout=10,
                 )
                 response.raise_for_status()

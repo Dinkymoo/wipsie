@@ -63,11 +63,8 @@ def lambda_handler(event, context):
 
     except Exception as e:
         # Ensure task_data is defined for error handling
-        task_data = (
-            event.get("task_data", {})
-            if "task_data" not in locals()
-            else task_data
-        )
+        if "task_data" not in locals():
+            task_data = event.get("task_data", {})
 
         error_response = {
             "statusCode": 500,
@@ -161,7 +158,11 @@ def process_report_generation(task_data: Dict[str, Any]) -> Dict[str, Any]:
         # 4. Send notification with download link
 
         # Mock S3 URL
-        s3_url = f"https://my-bucket.s3.amazonaws.com/reports/{report_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        timestamp = datetime.now().strftime('%Y%m%d')
+        s3_url = (
+            f"https://my-bucket.s3.amazonaws.com/reports/"
+            f"{report_name}_{timestamp}.pdf"
+        )
 
         return {
             "status": "success",
@@ -186,7 +187,8 @@ def process_data_cleanup(task_data: Dict[str, Any]) -> Dict[str, Any]:
         days_old = task_data.get("days_old", 30)
 
         print(
-            f"Running {cleanup_type} cleanup for records older than {days_old} days"
+            f"Running {cleanup_type} cleanup for records "
+            f"older than {days_old} days"
         )
 
         # Mock cleanup results
@@ -257,7 +259,8 @@ def update_task_status(
 
         # This would be something like:
         # requests.put(f"{api_base_url}/api/tasks/{task_id}", json={
-        #     'status': 'completed' if result['status'] == 'success' else 'failed',
+        #     'status': ('completed' if result['status'] == 'success'
+        #                else 'failed'),
         #     'result': result
         # })
 

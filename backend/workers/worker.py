@@ -4,9 +4,10 @@ Wipsie Worker Entry Point
 Main entry point for running Celery workers
 """
 
-from backend.workers.celery_app import app
 import sys
 from pathlib import Path
+
+from backend.workers.celery_app import app
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent.parent

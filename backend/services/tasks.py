@@ -1,9 +1,11 @@
-from celery import current_task
-from backend.core.celery_app import celery_app
-from backend.services.lambda_service import LambdaService
-import httpx
 import asyncio
 from datetime import datetime
+
+import httpx
+from celery import current_task
+
+from backend.core.celery_app import celery_app
+from backend.services.lambda_service import LambdaService
 
 
 @celery_app.task(bind=True)

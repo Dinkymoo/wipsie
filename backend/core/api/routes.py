@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from backend.api.endpoints import users, tasks, data_points, lambda_functions
+
+from backend.api.endpoints import data_points, lambda_functions, tasks, users
 
 api_router = APIRouter()
 

@@ -2,10 +2,12 @@
 User service for handling user-related business logic
 """
 
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from backend.models.models import User
 from backend.schemas.schemas import UserCreate, UserUpdate
-from typing import List, Optional
 
 
 class UserService:

@@ -1,7 +1,9 @@
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from backend.models.models import Task
 from backend.schemas.schemas import TaskCreate, TaskUpdate
-from typing import List, Optional
 
 
 class TaskService:

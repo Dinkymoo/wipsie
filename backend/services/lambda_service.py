@@ -1,9 +1,11 @@
-import boto3
-import json
-from typing import Dict, Any, List
-from backend.core.config import settings
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List
+
+import boto3
+
+from backend.core.config import settings
 
 
 class LambdaService:

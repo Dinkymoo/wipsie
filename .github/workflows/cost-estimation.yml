@@ -311,4 +311,4 @@ jobs:
             }]
           }
         webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-      if: github.event_name == 'schedule' && secrets.SLACK_WEBHOOK != ''
+      if: github.event_name == 'schedule'

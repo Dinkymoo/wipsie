@@ -4,10 +4,12 @@ Local Lambda Function Tester
 Test your Lambda functions locally before deploying to AWS
 """
 
+import importlib.util
 import json
 import os
-import importlib.util
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
 
 def load_lambda_function(function_path):

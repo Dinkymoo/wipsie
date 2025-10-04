@@ -1,0 +1,292 @@
+name: 🏗️ Infrastructure Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+        - destroy
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  TERRAFORM_VERSION: '1.6.0'
+  AWS_REGION: 'eu-west-1'
+
+jobs:
+  # ===============================================
+  # 🔍 TERRAFORM VALIDATION
+  # ===============================================
+  validate:
+    name: 🔍 Validate Terraform
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+    
+    - name: 🔍 Terraform Format Check
+      run: |
+        terraform fmt -check -recursive infrastructure/
+    
+    - name: 🔧 Terraform Init
+      run: |
+        cd infrastructure/
+        terraform init -backend=false
+    
+    - name: ✅ Terraform Validate
+      run: |
+        cd infrastructure/
+        terraform validate
+
+  # ===============================================
+  # 📋 TERRAFORM PLAN
+  # ===============================================
+  plan:
+    name: 📋 Terraform Plan
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+    
+    strategy:
+      matrix:
+        environment: ${{ github.event_name == 'workflow_dispatch' && fromJson(format('["{0}"]', github.event.inputs.environment)) || fromJson('["staging", "production"]') }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+    
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ matrix.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ matrix.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: 🔧 Terraform Init
+      run: |
+        cd infrastructure/
+        terraform init \
+          -backend-config="bucket=wipsie-terraform-state-${{ matrix.environment }}" \
+          -backend-config="key=wipsie/${{ matrix.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+    
+    - name: 📋 Terraform Plan
+      run: |
+        cd infrastructure/
+        terraform plan \
+          -var="environment=${{ matrix.environment }}" \
+          -var="aws_region=${{ env.AWS_REGION }}" \
+          -out=${{ matrix.environment }}.tfplan
+    
+    - name: 📤 Upload Plan
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-plan-${{ matrix.environment }}
+        path: infrastructure/${{ matrix.environment }}.tfplan
+        retention-days: 7
+
+  # ===============================================
+  # 🚀 TERRAFORM APPLY
+  # ===============================================
+  apply:
+    name: 🚀 Terraform Apply
+    runs-on: ubuntu-latest
+    needs: [validate, plan]
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event.inputs.action == 'apply'
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+    
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ github.event.inputs.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ github.event.inputs.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: 📥 Download Terraform Plan
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-plan-${{ github.event.inputs.environment || 'staging' }}
+        path: infrastructure/
+      continue-on-error: true
+    
+    - name: 🔧 Terraform Init
+      run: |
+        cd infrastructure/
+        terraform init \
+          -backend-config="bucket=wipsie-terraform-state-${{ github.event.inputs.environment || 'staging' }}" \
+          -backend-config="key=wipsie/${{ github.event.inputs.environment || 'staging' }}/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+    
+    - name: 🚀 Terraform Apply
+      run: |
+        cd infrastructure/
+        ENV="${{ github.event.inputs.environment || 'staging' }}"
+        
+        if [ -f "${ENV}.tfplan" ]; then
+          echo "🚀 Applying saved plan..."
+          terraform apply "${ENV}.tfplan"
+        else
+          echo "🚀 Applying with auto-approve..."
+          terraform apply -auto-approve \
+            -var="environment=${ENV}" \
+            -var="aws_region=${{ env.AWS_REGION }}"
+        fi
+    
+    - name: 📊 Terraform Output
+      run: |
+        cd infrastructure/
+        terraform output -json > terraform-outputs.json
+        cat terraform-outputs.json
+    
+    - name: 📤 Upload Terraform Outputs
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-outputs-${{ github.event.inputs.environment || 'staging' }}
+        path: infrastructure/terraform-outputs.json
+        retention-days: 30
+
+  # ===============================================
+  # 💥 TERRAFORM DESTROY
+  # ===============================================
+  destroy:
+    name: 💥 Terraform Destroy
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event.inputs.action == 'destroy'
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+    
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ github.event.inputs.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ github.event.inputs.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: 🔧 Terraform Init
+      run: |
+        cd infrastructure/
+        terraform init \
+          -backend-config="bucket=wipsie-terraform-state-${{ github.event.inputs.environment }}" \
+          -backend-config="key=wipsie/${{ github.event.inputs.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+    
+    - name: 💥 Terraform Destroy
+      run: |
+        cd infrastructure/
+        terraform destroy -auto-approve \
+          -var="environment=${{ github.event.inputs.environment }}" \
+          -var="aws_region=${{ env.AWS_REGION }}"
+    
+    - name: 📢 Notify Destruction
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "channel": "#infrastructure",
+            "username": "Infrastructure Bot",
+            "icon_emoji": ":warning:",
+            "attachments": [{
+              "color": "danger",
+              "title": "💥 Infrastructure Destroyed",
+              "text": "Terraform destroy completed for ${{ github.event.inputs.environment }} environment",
+              "fields": [{
+                "title": "Environment",
+                "value": "${{ github.event.inputs.environment }}",
+                "short": true
+              }]
+            }]
+          }
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ===============================================
+  # 📢 INFRASTRUCTURE MONITORING
+  # ===============================================
+  monitor:
+    name: 📢 Monitor Infrastructure
+    runs-on: ubuntu-latest
+    needs: [apply]
+    if: success() && github.event.inputs.action == 'apply'
+    
+    steps:
+    - name: 📥 Download Terraform Outputs
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-outputs-${{ github.event.inputs.environment || 'staging' }}
+        path: ./
+    
+    - name: 📊 Infrastructure Health Check
+      run: |
+        echo "📊 Checking infrastructure health..."
+        
+        # Parse terraform outputs
+        if [ -f terraform-outputs.json ]; then
+          echo "📋 Infrastructure outputs:"
+          cat terraform-outputs.json | jq '.'
+          
+          # Extract important URLs/endpoints for health checks
+          # Example: API_URL=$(cat terraform-outputs.json | jq -r '.api_url.value')
+          # curl -f $API_URL/health || echo "Health check failed"
+        fi
+    
+    - name: 📢 Notify Infrastructure Update
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#infrastructure'
+        text: |
+          🏗️ Infrastructure update completed!
+          Environment: ${{ github.event.inputs.environment || 'staging' }}
+          Action: ${{ github.event.inputs.action || 'apply' }}
+          Commit: ${{ github.sha }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}

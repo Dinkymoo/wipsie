@@ -123,10 +123,3 @@ echo "✅ Setup complete! Your awesome full-stack application is ready!"
 echo "🌐 Backend will be available at: http://localhost:8000"
 echo "🅰️ Frontend will be available at: http://localhost:4200"
 echo "📖 API Documentation: http://localhost:8000/docs"
-
-"terminal.integrated.env.linux": {
-  "DATABASE_URL": "postgresql://postgres:postgres@db:5432/wipsie_db",
-  "AWS_REGION": "us-east-1",
-  "PYTHONPATH": "/workspaces/wipsie",
-  "PATH": "/workspaces/wipsie/venv_container/bin:${env:PATH}"
-}

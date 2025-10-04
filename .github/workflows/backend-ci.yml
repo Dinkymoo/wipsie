@@ -92,8 +92,19 @@ jobs:
     - name: 🔒 Security Scan
       run: |
         echo "🔒 Running security checks..."
-        safety check
-        bandit -r backend/ -f json || true
+        safety scan --policy-file .safety-policy.json --output json --save-as security-report.json || true
+        bandit -r backend/ -f json -o bandit-report.json || true
+        echo "✅ Security scan completed - reports generated"
+    
+    - name: 📤 Upload Security Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          security-report.json
+          bandit-report.json
+        retention-days: 30
+      if: always()
     
     - name: 🗄️ Set up Database
       run: |

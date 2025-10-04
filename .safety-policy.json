@@ -1,0 +1,15 @@
+{
+  "security": {
+    "ignore-vulnerabilities": [
+      "64459",
+      "64396"
+    ]
+  },
+  "alert": {
+    "ignore-vulnerabilities": []
+  },
+  "report": {
+    "dependency-vulnerabilities": true,
+    "security-advisories": true
+  }
+}

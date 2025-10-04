@@ -1,0 +1,12 @@
+{
+  "queue_name": "default",
+  "message": {
+    "task_type": "api_test",
+    "message": "Hello from curl! 🚀",
+    "priority": "medium",
+    "data": {
+      "test_id": "curl-test-001",
+      "action": "test_sqs_integration"
+    }
+  }
+}

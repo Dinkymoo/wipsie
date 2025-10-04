@@ -44,7 +44,8 @@ class Settings(BaseSettings):
     # Celery Configuration with SQS
     @property
     def CELERY_BROKER_URL(self) -> str:
-        return f"sqs://{self.AWS_ACCESS_KEY_ID}:{self.AWS_SECRET_ACCESS_KEY}@"
+        # For SQS, we need a different URL format
+        return "sqs://"
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:

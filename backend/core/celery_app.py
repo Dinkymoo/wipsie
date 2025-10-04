@@ -28,6 +28,9 @@ celery_app.conf.update(
         'visibility_timeout': 300,  # 5 minutes
         'polling_interval': 1,
         'queue_name_prefix': f"{settings.SQS_QUEUE_PREFIX}-",
+        # AWS credentials
+        'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+        'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
     },
 
     # Task routing to different SQS queues

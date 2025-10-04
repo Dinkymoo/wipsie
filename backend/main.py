@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.endpoints import sqs
+
 app = FastAPI(
     title="Wipsie Full Stack API",
-    description="A comprehensive full-stack application with FastAPI, Angular, PostgreSQL, and AWS Lambda",
+    description=("A comprehensive full-stack application with FastAPI, "
+                 "Angular, PostgreSQL, and AWS Lambda"),
     version="1.0.0"
 )
 
@@ -16,9 +19,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(sqs.router)
+
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to Wipsie Full Stack API! 🚀"}
+
 
 @app.get("/health")
 async def health_check():

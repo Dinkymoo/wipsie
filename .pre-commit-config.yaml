@@ -9,13 +9,7 @@ repos:
       - id: black
         language_version: python3
         args: [--line-length=79]
-        exclude: |
-          (?x)^(
-              aws-lambda/packages/.*|
-              venv_container/.*|
-              \.venv/.*|
-              node_modules/.*
-          )$
+        files: ^backend/.*\.py$
 
   # isort Python import sorter
   - repo: https://github.com/pycqa/isort
@@ -23,13 +17,7 @@ repos:
     hooks:
       - id: isort
         args: [--profile=black, --line-length=79]
-        exclude: |
-          (?x)^(
-              aws-lambda/packages/.*|
-              venv_container/.*|
-              \.venv/.*|
-              node_modules/.*
-          )$
+        files: ^backend/.*\.py$
 
   # Flake8 Python linter
   - repo: https://github.com/pycqa/flake8
@@ -37,13 +25,7 @@ repos:
     hooks:
       - id: flake8
         args: [--max-line-length=79, --extend-ignore=E203,W503]
-        exclude: |
-          (?x)^(
-              aws-lambda/packages/.*|
-              venv_container/.*|
-              \.venv/.*|
-              node_modules/.*
-          )$
+        files: ^backend/.*\.py$
 
   # Remove trailing whitespace
   - repo: https://github.com/pre-commit/pre-commit-hooks

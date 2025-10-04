@@ -71,7 +71,7 @@ jobs:
     - name: 🎨 Check Python code formatting with Black
       run: |
         echo "🎨 Checking code formatting with Black..."
-        black --check --line-length 79 --exclude 'aws-lambda/packages/|venv_container/|\.venv/' .
+        black --check --line-length 79 --extend-exclude="aws-lambda/packages|venv_container|\.venv|node_modules" backend/
         
     - name: 📦 Check imports with isort
       run: |

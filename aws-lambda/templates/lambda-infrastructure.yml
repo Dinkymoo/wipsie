@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Wipsie Lambda Functions Infrastructure'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: wipsie
+    Description: Name of the project
+  
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+    
+  ApiBaseUrl:
+    Type: String
+    Default: https://api.wipsie.com
+    Description: Base URL for the FastAPI backend
+    
+  WeatherApiKey:
+    Type: String
+    Default: demo_key
+    NoEcho: true
+    Description: API key for weather data
+
+Resources:
+  # IAM Role for Lambda Functions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${Environment}-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub "${S3Bucket}/*"
+
+  # S3 Bucket for reports and data storage
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${Environment}-data-bucket"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # Data Poller Lambda Function
+  DataPollerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-data-poller"
+      Runtime: python3.9
+      Handler: data_poller.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          # Placeholder - replace with actual deployment package
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': 'Placeholder function'}
+      Environment:
+        Variables:
+          API_BASE_URL: !Ref ApiBaseUrl
+          WEATHER_API_KEY: !Ref WeatherApiKey
+          S3_BUCKET: !Ref S3Bucket
+      Timeout: 300
+      MemorySize: 256
+      Description: "Polls external APIs for data collection"
+
+  # Task Processor Lambda Function
+  TaskProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-task-processor"
+      Runtime: python3.9
+      Handler: task_processor.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          # Placeholder - replace with actual deployment package
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': 'Placeholder function'}
+      Environment:
+        Variables:
+          API_BASE_URL: !Ref ApiBaseUrl
+          S3_BUCKET: !Ref S3Bucket
+      Timeout: 600
+      MemorySize: 512
+      Description: "Processes background tasks asynchronously"
+
+  # EventBridge Rule for scheduled data polling
+  DataPollerScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-data-poller-schedule"
+      Description: "Triggers data poller every 15 minutes"
+      ScheduleExpression: "rate(15 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt DataPollerFunction.Arn
+          Id: "DataPollerTarget"
+          Input: '{"source": "weather"}'
+
+  # Permission for EventBridge to invoke Data Poller
+  DataPollerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DataPollerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DataPollerScheduleRule.Arn
+
+  # CloudWatch Log Groups
+  DataPollerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${DataPollerFunction}"
+      RetentionInDays: 14
+
+  TaskProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${TaskProcessorFunction}"
+      RetentionInDays: 14
+
+  # SNS Topic for notifications
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-${Environment}-notifications"
+      DisplayName: "Wipsie Notifications"
+
+Outputs:
+  DataPollerFunctionArn:
+    Description: "ARN of the Data Poller Lambda function"
+    Value: !GetAtt DataPollerFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-data-poller-arn"
+
+  TaskProcessorFunctionArn:
+    Description: "ARN of the Task Processor Lambda function"
+    Value: !GetAtt TaskProcessorFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-task-processor-arn"
+
+  S3BucketName:
+    Description: "Name of the S3 bucket for data storage"
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-s3-bucket"
+
+  NotificationTopicArn:
+    Description: "ARN of the SNS notification topic"
+    Value: !Ref NotificationTopic
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sns-topic"

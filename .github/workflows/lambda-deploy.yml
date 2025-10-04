@@ -42,7 +42,7 @@ jobs:
         run: |
           cd aws-lambda
           echo "🧪 Testing Lambda functions..."
-          python -m pytest -v
+          python -m pytest -v --rootdir=. --ignore=../backend
 
       - name: 🔍 Lint Lambda Code
         run: |

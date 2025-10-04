@@ -56,7 +56,6 @@ testpaths = [
 pythonpath = [
     "."
 ]
-asyncio_mode = "auto"
 
 [tool.black]
 target-version = ['py311']

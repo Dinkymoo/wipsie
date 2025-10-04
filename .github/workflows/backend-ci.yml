@@ -68,14 +68,16 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-asyncio black isort flake8 mypy safety bandit
     
-    - name: 🎨 Code Formatting Check
+    - name: 🎨 Check Python code formatting with Black
       run: |
         echo "🎨 Checking code formatting with Black..."
-        black --check --diff backend/
+        black --check --line-length 79 --exclude 'aws-lambda/packages/|venv_container/|\.venv/' .
         
+    - name: 📦 Check imports with isort
+      run: |
         echo "📦 Checking imports with isort..."
         isort --check-only --diff backend/
-    
+        
     - name: 🔍 Lint with Flake8
       run: |
         echo "🔍 Running Flake8 linting..."

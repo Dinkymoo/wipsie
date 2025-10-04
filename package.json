@@ -1,0 +1,35 @@
+{
+  "name": "wipsie-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack application with Python FastAPI, Angular, PostgreSQL, and AWS Lambda",
+  "scripts": {
+    "dev:backend": "uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd frontend/wipsie-app && ng serve --host 0.0.0.0",
+    "dev:celery": "celery -A backend.core.celery_app worker --loglevel=info",
+    "dev:flower": "celery -A backend.core.celery_app flower",
+    "setup:frontend": "cd frontend && ng new wipsie-app --routing --style=scss --skip-git",
+    "build:frontend": "cd frontend/wipsie-app && ng build",
+    "test:backend": "pytest backend/tests/",
+    "test:frontend": "cd frontend/wipsie-app && ng test",
+    "format:backend": "black backend/ && isort backend/",
+    "lint:backend": "flake8 backend/",
+    "db:migrate": "alembic upgrade head",
+    "db:migration": "alembic revision --autogenerate",
+    "docker:up": "docker-compose -f .devcontainer/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f .devcontainer/docker-compose.yml down"
+  },
+  "keywords": [
+    "fastapi",
+    "angular",
+    "postgresql",
+    "redis",
+    "celery",
+    "aws-lambda",
+    "docker",
+    "fullstack"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

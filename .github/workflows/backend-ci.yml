@@ -120,7 +120,7 @@ jobs:
       - name: 🧪 Run Tests
         run: |
           echo "🧪 Running backend tests with coverage..."
-          pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=html
+          pytest -v --cov=backend --cov-report=xml --cov-report=html
         env:
           DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
           REDIS_URL: redis://localhost:6379

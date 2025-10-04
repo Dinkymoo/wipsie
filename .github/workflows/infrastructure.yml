@@ -111,7 +111,7 @@ jobs:
           -out=${{ matrix.environment }}.tfplan
     
     - name: 📤 Upload Plan
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: terraform-plan-${{ matrix.environment }}
         path: infrastructure/${{ matrix.environment }}.tfplan
@@ -144,7 +144,7 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
     
     - name: 📥 Download Terraform Plan
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: terraform-plan-${{ github.event.inputs.environment || 'staging' }}
         path: infrastructure/
@@ -180,7 +180,7 @@ jobs:
         cat terraform-outputs.json
     
     - name: 📤 Upload Terraform Outputs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: terraform-outputs-${{ github.event.inputs.environment || 'staging' }}
         path: infrastructure/terraform-outputs.json
@@ -260,7 +260,7 @@ jobs:
     
     steps:
     - name: 📥 Download Terraform Outputs
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: terraform-outputs-${{ github.event.inputs.environment || 'staging' }}
         path: ./

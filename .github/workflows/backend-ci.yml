@@ -57,7 +57,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: 🐍 Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
@@ -97,7 +97,7 @@ jobs:
         echo "✅ Security scan completed - reports generated"
     
     - name: 📤 Upload Security Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: |

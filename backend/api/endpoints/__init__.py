@@ -1,1 +1,3 @@
-# API Endpoints Package
+"""
+Endpoints initialization.
+"""

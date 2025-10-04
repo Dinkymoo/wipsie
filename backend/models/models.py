@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
-from sqlalchemy.sql import func
-from backend.db.database import Base
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.sql import (
+    func,
+)
+
+from backend.db.database import (
+    Base,
+)
 
 
 class User(Base):

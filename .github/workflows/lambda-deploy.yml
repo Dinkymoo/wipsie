@@ -1,0 +1,276 @@
+name: ⚡ AWS Lambda Deployment
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "aws-lambda/**"
+      - ".github/workflows/lambda-deploy.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "aws-lambda/**"
+
+env:
+  AWS_REGION: "eu-west-1"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ===============================================
+  # 🧪 TEST LAMBDA FUNCTIONS
+  # ===============================================
+  test:
+    name: 🧪 Test Lambda Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Dependencies
+        run: |
+          cd aws-lambda
+          pip install -r requirements.txt
+          pip install pytest boto3 moto flake8
+
+      - name: 🧪 Run Lambda Tests
+        run: |
+          cd aws-lambda
+          echo "🧪 Testing Lambda functions..."
+          python -m pytest -v --rootdir=. --ignore=../backend
+
+      - name: 🔍 Lint Lambda Code
+        run: |
+          cd aws-lambda
+          echo "🔍 Linting Lambda functions..."
+          flake8 functions/ --max-line-length=88
+
+  # ===============================================
+  # 📦 PACKAGE LAMBDA FUNCTIONS
+  # ===============================================
+  package:
+    name: 📦 Package Functions
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    strategy:
+      matrix:
+        function: [data_poller, task_processor]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Package Lambda Function
+        run: |
+          cd aws-lambda
+          echo "📦 Packaging ${{ matrix.function }} function..."
+
+          # Create package directory
+          mkdir -p packages/${{ matrix.function }}
+
+          # Install dependencies
+          pip install -r requirements.txt -t packages/${{ matrix.function }}/
+
+          # Copy function code
+          cp functions/${{ matrix.function }}.py packages/${{ matrix.function }}/
+
+          # Create zip package
+          cd packages/${{ matrix.function }}
+          zip -r ../${{ matrix.function }}.zip .
+
+          echo "✅ Package created: ${{ matrix.function }}.zip"
+
+      - name: 📤 Upload Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-${{ matrix.function }}
+          path: aws-lambda/packages/${{ matrix.function }}.zip
+          retention-days: 7
+
+  # ===============================================
+  # 🚀 DEPLOY TO STAGING
+  # ===============================================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, package]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    strategy:
+      matrix:
+        function: [data_poller, task_processor]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download Package
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-${{ matrix.function }}
+          path: ./
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🚀 Deploy Lambda Function
+        run: |
+          echo "🚀 Deploying ${{ matrix.function }} to staging..."
+
+          FUNCTION_NAME="wipsie-staging-${{ matrix.function }}"
+
+          # Update function code
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --zip-file fileb://${{ matrix.function }}.zip
+
+          # Update function configuration
+          aws lambda update-function-configuration \
+            --function-name $FUNCTION_NAME \
+            --environment Variables='{
+              "ENVIRONMENT":"staging",
+              "LOG_LEVEL":"INFO",
+              "SQS_QUEUE_PREFIX":"wipsie-staging"
+            }'
+
+          echo "✅ Lambda function $FUNCTION_NAME deployed successfully"
+
+      - name: 🧪 Test Deployed Function
+        run: |
+          echo "🧪 Testing deployed function..."
+          FUNCTION_NAME="wipsie-staging-${{ matrix.function }}"
+
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --payload '{"test": true}' \
+            response.json
+
+          cat response.json
+          echo "✅ Function test completed"
+
+  # ===============================================
+  # 🌟 DEPLOY TO PRODUCTION
+  # ===============================================
+  deploy-production:
+    name: 🌟 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, package]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    strategy:
+      matrix:
+        function: [data_poller, task_processor]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download Package
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-${{ matrix.function }}
+          path: ./
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🚀 Deploy Production Lambda
+        run: |
+          echo "🚀 Deploying ${{ matrix.function }} to production..."
+
+          FUNCTION_NAME="wipsie-${{ matrix.function }}"
+
+          # Update function code
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --zip-file fileb://${{ matrix.function }}.zip
+
+          # Update function configuration
+          aws lambda update-function-configuration \
+            --function-name $FUNCTION_NAME \
+            --environment Variables='{
+              "ENVIRONMENT":"production",
+              "LOG_LEVEL":"WARNING",
+              "SQS_QUEUE_PREFIX":"wipsie"
+            }'
+
+          echo "✅ Production Lambda function $FUNCTION_NAME deployed successfully"
+
+      - name: 🧪 Test Production Function
+        run: |
+          echo "🧪 Testing production function..."
+          FUNCTION_NAME="wipsie-${{ matrix.function }}"
+
+          aws lambda invoke \
+            --function-name $FUNCTION_NAME \
+            --payload '{"test": true}' \
+            response.json
+
+          cat response.json
+          echo "✅ Production function test completed"
+
+      - name: 📢 Notify Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: "#deployments"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()
+
+  # ===============================================
+  # 🏗️ INFRASTRUCTURE DEPLOYMENT
+  # ===============================================
+  deploy-infrastructure:
+    name: 🏗️ Deploy Infrastructure
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🏗️ Deploy CloudFormation Stack
+        run: |
+          cd aws-lambda/templates
+          echo "🏗️ Deploying Lambda infrastructure..."
+
+          aws cloudformation deploy \
+            --template-file lambda-infrastructure.yml \
+            --stack-name wipsie-lambda-infrastructure \
+            --parameter-overrides \
+              Environment=production \
+              ProjectName=wipsie \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset
+
+          echo "✅ Infrastructure deployment completed"

@@ -1,0 +1,159 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: wipsie
+  title: Wipsie Full Stack Application
+  description: |
+    A modern full-stack application built with FastAPI, Angular, and AWS services.
+    Provides data processing, task management, and notification capabilities.
+  tags:
+    - python
+    - fastapi
+    - angular
+    - typescript
+    - aws
+    - postgresql
+    - celery
+    - sqs
+    - ses
+    - docker
+  annotations:
+    github.com/project-slug: Dinkymoo/learn-work
+    backstage.io/techdocs-ref: dir:.
+    cloud.google.com/function-ids: wipsie-data-poller,wipsie-task-processor
+spec:
+  type: service
+  owner: "platform-team"
+  lifecycle: experimental
+  system: wipsie-platform
+  
+  # API Definition
+  providesApis:
+    - wipsie-api
+  
+  # Dependencies
+  dependsOn:
+    - resource:wipsie-database
+    - resource:wipsie-cache
+    - resource:wipsie-sqs-queues
+    - resource:wipsie-ses-service
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: wipsie-api
+  title: Wipsie REST API
+  description: RESTful API for the Wipsie application
+  tags:
+    - rest
+    - fastapi
+    - python
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: "platform-team"
+  system: wipsie-platform
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Wipsie API
+      version: 1.0.0
+      description: REST API for Wipsie application
+    servers:
+      - url: https://api.wipsie.com
+        description: Production server
+      - url: http://localhost:8000
+        description: Development server
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: wipsie-database
+  title: Wipsie PostgreSQL Database
+  description: Primary PostgreSQL database for Wipsie application
+  tags:
+    - postgresql
+    - database
+spec:
+  type: database
+  owner: "platform-team"
+  system: wipsie-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: wipsie-cache
+  title: Wipsie Redis Cache
+  description: Redis cache and session store for Wipsie application
+  tags:
+    - redis
+    - cache
+spec:
+  type: cache
+  owner: "platform-team"
+  system: wipsie-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: wipsie-sqs-queues
+  title: Wipsie SQS Queues
+  description: Amazon SQS message queues for background task processing
+  tags:
+    - aws
+    - sqs
+    - messaging
+  annotations:
+    aws.amazon.com/arn: "arn:aws:sqs:eu-west-1:554510949034:wipsie-*"
+spec:
+  type: queue
+  owner: "platform-team"
+  system: wipsie-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: wipsie-ses-service
+  title: Wipsie SES Email Service
+  description: Amazon SES for email notifications and communications
+  tags:
+    - aws
+    - ses
+    - email
+  annotations:
+    aws.amazon.com/arn: "arn:aws:ses:eu-west-1:554510949034:identity/*"
+spec:
+  type: service
+  owner: "platform-team"
+  system: wipsie-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: wipsie-platform
+  title: Wipsie Platform
+  description: |
+    Complete platform for the Wipsie application including all services,
+    databases, queues, and supporting infrastructure.
+  tags:
+    - platform
+    - microservices
+spec:
+  owner: "platform-team"
+  domain: "learning-platform"
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: learning-platform
+  title: Learning Platform Domain
+  description: Domain for educational and learning-focused applications
+spec:
+  owner: "platform-team"

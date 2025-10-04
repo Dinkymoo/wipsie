@@ -1,7 +1,19 @@
-from sqlalchemy.orm import Session
-from backend.models.models import Task
-from backend.schemas.schemas import TaskCreate, TaskUpdate
-from typing import List, Optional
+from typing import (
+    List,
+    Optional,
+)
+
+from sqlalchemy.orm import (
+    Session,
+)
+
+from backend.models.models import (
+    Task,
+)
+from backend.schemas.schemas import (
+    TaskCreate,
+    TaskUpdate,
+)
 
 
 class TaskService:
@@ -25,7 +37,9 @@ class TaskService:
         return db_task
 
     @staticmethod
-    def update_task(db: Session, task_id: int, task_update: TaskUpdate) -> Optional[Task]:
+    def update_task(
+        db: Session, task_id: int, task_update: TaskUpdate
+    ) -> Optional[Task]:
         """Update an existing task"""
         db_task = db.query(Task).filter(Task.id == task_id).first()
         if not db_task:

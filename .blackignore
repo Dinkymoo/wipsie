@@ -1,0 +1,14 @@
+# Black code formatter ignore patterns
+# Exclude third-party dependencies and virtual environments
+
+aws-lambda/packages/
+venv_container/
+.venv/
+node_modules/
+frontend/wipsie-app/node_modules/
+
+# Alembic auto-generated files (optional - keep commented if you want to format them)
+# backend/alembic/versions/
+
+# Archive files (optional - keep commented if you want to format them)  
+# archive/

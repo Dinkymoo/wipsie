@@ -1,0 +1,315 @@
+name: 💰 Cost Estimation & Monitoring
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '.github/workflows/**'
+      - 'aws-lambda/**'
+      - 'infrastructure/**'
+      - 'docker/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to estimate costs for'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+        - all
+  schedule:
+    # Run cost estimation every Monday at 10 AM UTC
+    - cron: '0 10 * * 1'
+
+jobs:
+  # ===============================================
+  # 💰 ESTIMATE DEPLOYMENT COSTS
+  # ===============================================
+  estimate-costs:
+    name: 💰 Estimate AWS Costs
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'all' && fromJson('["development", "staging", "production"]') || github.event_name == 'workflow_dispatch' && fromJson(format('["{0}"]', github.event.inputs.environment)) || fromJson('["development", "staging", "production"]') }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: 💰 Run Cost Estimation
+      run: |
+        cd tools/cost-estimation
+        echo "💰 Estimating costs for ${{ matrix.environment }} environment..."
+        python simple_cost_estimator.py ${{ matrix.environment }}
+        echo ""
+        echo "📊 Generating detailed cost breakdown..."
+        python simple_cost_estimator.py ${{ matrix.environment }} > cost_estimate_${{ matrix.environment }}.txt
+    
+    - name: 📄 Create Cost Report
+      run: |
+        cat > cost_report_${{ matrix.environment }}.md << EOF
+        # 💰 Cost Estimate - ${{ matrix.environment }} Environment
+        
+        Generated on: $(date)
+        Commit: ${{ github.sha }}
+        
+        ## Cost Breakdown
+        \`\`\`
+        $(cd tools/cost-estimation && python simple_cost_estimator.py ${{ matrix.environment }})
+        \`\`\`
+        
+        ## Important Notes
+        - These are **estimates** based on typical usage patterns
+        - Actual costs may vary based on real usage
+        - AWS Free Tier applies to eligible services for the first 12 months
+        - Consider Reserved Instances for production workloads to save 30-50%
+        
+        ## Cost Optimization Recommendations
+        - **Development**: Use t3.micro instances, minimal storage
+        - **Staging**: Scale down when not actively testing
+        - **Production**: Use Reserved Instances, enable cost alerts
+        
+        ## Monitoring Setup
+        Set up AWS Cost Anomaly Detection and billing alerts to monitor spending.
+        EOF
+    
+    - name: 📤 Upload Cost Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: cost-estimate-${{ matrix.environment }}
+        path: cost_report_${{ matrix.environment }}.md
+        retention-days: 30
+
+  # ===============================================
+  # 📊 TERRAFORM COST ESTIMATION
+  # ===============================================
+  terraform-cost-estimate:
+    name: 📊 Terraform Cost Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.changed_files, 'infrastructure/')
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.6.0'
+    
+    - name: 💰 Install Infracost
+      run: |
+        # Install Infracost for Terraform cost estimation
+        curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+    
+    - name: 📊 Generate Terraform Cost Estimate
+      run: |
+        cd infrastructure/
+        
+        # Initialize Terraform
+        terraform init -backend=false
+        
+        # Generate cost estimate with Infracost
+        infracost breakdown --path . --format table > terraform_cost_estimate.txt || echo "Infracost analysis completed with warnings"
+        
+        cat terraform_cost_estimate.txt
+      env:
+        INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+      continue-on-error: true
+    
+    - name: 📄 Create Terraform Cost Report
+      run: |
+        cat > terraform_cost_report.md << EOF
+        # 🏗️ Terraform Infrastructure Cost Estimate
+        
+        Generated on: $(date)
+        Commit: ${{ github.sha }}
+        
+        ## Infrastructure Cost Breakdown
+        \`\`\`
+        $(cat infrastructure/terraform_cost_estimate.txt 2>/dev/null || echo "Cost estimation not available")
+        \`\`\`
+        
+        ## Notes
+        - Costs shown are monthly estimates
+        - Actual usage may vary significantly
+        - Consider using Spot instances for non-critical workloads
+        - Review resource sizing based on actual requirements
+        EOF
+    
+    - name: 📤 Upload Terraform Cost Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-cost-estimate
+        path: terraform_cost_report.md
+        retention-days: 30
+
+  # ===============================================
+  # 🔔 COST ALERTS & MONITORING
+  # ===============================================
+  setup-cost-monitoring:
+    name: 🔔 Setup Cost Monitoring
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+    
+    - name: 🔔 Create Cost Budget (if not exists)
+      run: |
+        echo "🔔 Setting up AWS cost budget and alerts..."
+        
+        # Create cost budget for monthly spend
+        aws budgets put-budget \
+          --account-id $(aws sts get-caller-identity --query Account --output text) \
+          --budget '{
+            "BudgetName": "WipsieMonthlyBudget",
+            "BudgetLimit": {
+              "Amount": "100.0",
+              "Unit": "USD"
+            },
+            "TimeUnit": "MONTHLY",
+            "TimePeriod": {
+              "Start": "'$(date +%Y-%m-01)'",
+              "End": "2087-06-15"
+            },
+            "BudgetType": "COST",
+            "CostFilters": {
+              "TagKey": ["Project"],
+              "TagValue": ["Wipsie"]
+            }
+          }' 2>/dev/null || echo "Budget may already exist"
+        
+        echo "✅ Cost monitoring setup completed"
+    
+    - name: 📊 Generate Current Cost Report
+      run: |
+        echo "📊 Generating current AWS cost report..."
+        
+        # Get current month costs
+        START_DATE=$(date +%Y-%m-01)
+        END_DATE=$(date +%Y-%m-%d)
+        
+        aws ce get-cost-and-usage \
+          --time-period Start=$START_DATE,End=$END_DATE \
+          --granularity MONTHLY \
+          --metrics BlendedCost \
+          --group-by Type=DIMENSION,Key=SERVICE > current_costs.json || echo "Cost data not available"
+        
+        echo "💰 Current month costs retrieved"
+
+  # ===============================================
+  # 📢 COST SUMMARY REPORT
+  # ===============================================
+  cost-summary:
+    name: 📢 Cost Summary Report
+    runs-on: ubuntu-latest
+    needs: [estimate-costs, terraform-cost-estimate]
+    if: always()
+    
+    steps:
+    - name: 📥 Download Cost Reports
+      uses: actions/download-artifact@v4
+      with:
+        path: cost-reports/
+      continue-on-error: true
+    
+    - name: 📊 Generate Summary Report
+      run: |
+        echo "📊 Generating comprehensive cost summary..."
+        
+        cat > cost_summary.md << EOF
+        # 💰 Wipsie Application - Cost Analysis Summary
+        
+        **Generated**: $(date)
+        **Trigger**: ${{ github.event_name }}
+        **Commit**: ${{ github.sha }}
+        
+        ## Quick Cost Overview
+        
+        | Environment | Estimated Monthly Cost | Annual Cost |
+        |-------------|----------------------|-------------|
+        | Development | ~\$15-20             | ~\$180-240  |
+        | Staging     | ~\$70-80             | ~\$840-960  |
+        | Production  | ~\$200+              | ~\$2400+    |
+        
+        ## Key Cost Drivers
+        1. **Amazon RDS** - Database instances (always-on)
+        2. **AWS Lambda** - Function executions
+        3. **Amazon S3** - Storage and data transfer
+        4. **CloudFront** - CDN distribution
+        5. **GitHub Actions** - CI/CD pipeline execution
+        
+        ## Cost Optimization Opportunities
+        - 🎯 Use RDS Reserved Instances (30-50% savings)
+        - 🎯 Implement S3 lifecycle policies
+        - 🎯 Use Lambda provisioned concurrency judiciously  
+        - 🎯 Monitor and right-size resources regularly
+        - 🎯 Set up cost alerts and budgets
+        
+        ## Next Steps
+        1. Review detailed cost reports in artifacts
+        2. Set up AWS Cost Explorer dashboards
+        3. Implement cost monitoring alerts
+        4. Consider Reserved Instance purchases for production
+        
+        ---
+        💡 **Tip**: Start with development environment to learn and test, then scale to staging/production as needed.
+        EOF
+        
+        cat cost_summary.md
+    
+    - name: 📤 Upload Summary Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: cost-analysis-summary
+        path: cost_summary.md
+        retention-days: 90
+    
+    - name: 📢 Notify Team (Optional)
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "channel": "#infrastructure",
+            "username": "Cost Monitor",
+            "icon_emoji": ":moneybag:",
+            "attachments": [{
+              "color": "good",
+              "title": "💰 Cost Analysis Complete",
+              "text": "Cost estimation completed for Wipsie application",
+              "fields": [
+                {
+                  "title": "Development",
+                  "value": "~$15-20/month",
+                  "short": true
+                },
+                {
+                  "title": "Production", 
+                  "value": "~$200+/month",
+                  "short": true
+                }
+              ]
+            }]
+          }
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: github.event_name == 'schedule'
+

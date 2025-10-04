@@ -12,8 +12,8 @@ celery==5.3.4
 flower==2.0.1
 
 # AWS Services
-boto3==1.34.0
-botocore==1.34.0
+boto3>=1.34.144  # Updated for urllib3 compatibility
+botocore>=1.34.144  # Updated for urllib3 compatibility
 
 # Email
 email-validator==2.1.0

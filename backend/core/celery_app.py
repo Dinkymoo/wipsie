@@ -1,13 +1,17 @@
-from celery import Celery
+from celery import (
+    Celery,
+)
 
-from backend.core.config import settings
+from backend.core.config import (
+    settings,
+)
 
 # Create Celery instance
 celery_app = Celery(
     "wipsie",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["backend.services.tasks"]
+    include=["backend.services.tasks"],
 )
 
 # Configure Celery for SQS
@@ -18,18 +22,19 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-
     # SQS specific configuration
     broker_url=settings.CELERY_BROKER_URL,
     result_backend=settings.CELERY_RESULT_BACKEND,
     broker_region=settings.AWS_REGION,
     broker_transport_options={
-        'region': settings.AWS_REGION,
-        'visibility_timeout': 300,  # 5 minutes
-        'polling_interval': 1,
-        'queue_name_prefix': f"{settings.SQS_QUEUE_PREFIX}-",
+        "region": settings.AWS_REGION,
+        "visibility_timeout": 300,  # 5 minutes
+        "polling_interval": 1,
+        "queue_name_prefix": f"{settings.SQS_QUEUE_PREFIX}-",
+        # AWS credentials
+        "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+        "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
     },
-
     # Task routing to different SQS queues
     task_routes={
         "backend.services.tasks.poll_data": {
@@ -42,9 +47,12 @@ celery_app.conf.update(
             "queue": settings.SQS_NOTIFICATIONS_QUEUE
         },
     },
-
     # Result backend configuration
-    result_backend_transport_options={
-        'region': settings.AWS_REGION,
-    } if settings.CELERY_RESULT_BACKEND.startswith('sqs://') else {},
+    result_backend_transport_options=(
+        {
+            "region": settings.AWS_REGION,
+        }
+        if settings.CELERY_RESULT_BACKEND.startswith("sqs://")
+        else {}
+    ),
 )

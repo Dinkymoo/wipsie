@@ -1,10 +1,23 @@
 """
 User service for handling user-related business logic
 """
-from sqlalchemy.orm import Session
-from backend.models.models import User
-from backend.schemas.schemas import UserCreate, UserUpdate
-from typing import List, Optional
+
+from typing import (
+    List,
+    Optional,
+)
+
+from sqlalchemy.orm import (
+    Session,
+)
+
+from backend.models.models import (
+    User,
+)
+from backend.schemas.schemas import (
+    UserCreate,
+    UserUpdate,
+)
 
 
 class UserService:
@@ -32,9 +45,7 @@ class UserService:
     def create_user(db: Session, user: UserCreate) -> User:
         """Create a new user"""
         db_user = User(
-            email=user.email,
-            username=user.username,
-            is_active=True
+            email=user.email, username=user.username, is_active=True
         )
         db.add(db_user)
         db.commit()
@@ -42,7 +53,9 @@ class UserService:
         return db_user
 
     @staticmethod
-    def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
+    def update_user(
+        db: Session, user_id: int, user_update: UserUpdate
+    ) -> Optional[User]:
         """Update an existing user"""
         db_user = db.query(User).filter(User.id == user_id).first()
         if db_user:

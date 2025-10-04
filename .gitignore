@@ -97,12 +97,31 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.production
+.env.staging
+*.env
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# AWS credentials and config
+.aws/credentials
+.aws/config
+aws-credentials.json
+
+# Logs that might contain sensitive data
+*.log
+logs/
+celery.log
+worker.log
+
+# Database files
+*.db
+*.sqlite3
 
 # Spyder project settings
 .spyderproject
@@ -253,3 +272,9 @@ logs/
 *.pid
 /tmp/wipsie_*.pid
 /tmp/wipsie_*.log
+
+# Temporary scripts (remove after use)
+create_queues_direct.py
+create_eu_queues.py
+cleanup_us_queues.py
+troubleshoot_sqs.py

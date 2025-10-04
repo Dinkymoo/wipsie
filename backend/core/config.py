@@ -1,7 +1,13 @@
 import os
-from typing import List, Optional, Union
+from typing import (
+    List,
+    Optional,
+    Union,
+)
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import (
+    BaseSettings,
+)
 
 
 class Settings(BaseSettings):
@@ -30,7 +36,7 @@ class Settings(BaseSettings):
     ]
 
     # AWS Configuration
-    AWS_REGION: str = "us-east-1"
+    AWS_REGION: str = "eu-west-1"
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
 
@@ -44,7 +50,8 @@ class Settings(BaseSettings):
     # Celery Configuration with SQS
     @property
     def CELERY_BROKER_URL(self) -> str:
-        return f"sqs://{self.AWS_ACCESS_KEY_ID}:{self.AWS_SECRET_ACCESS_KEY}@"
+        # For SQS, we need a different URL format
+        return "sqs://"
 
     @property
     def CELERY_RESULT_BACKEND(self) -> str:

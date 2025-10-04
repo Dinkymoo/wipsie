@@ -112,7 +112,7 @@ jobs:
         export REDIS_URL="redis://localhost:6379"
         
         echo "🗄️ Running database migrations..."
-        cd backend && alembic upgrade head
+        alembic upgrade head
       env:
         DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
         REDIS_URL: redis://localhost:6379

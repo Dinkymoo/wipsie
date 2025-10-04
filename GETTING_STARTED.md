@@ -116,17 +116,19 @@ alembic upgrade head
 ```
 
 ### ☁️ **AWS SQS Setup**
-1. **Configure AWS Credentials**:
+1. **Configure AWS Credentials** (⚠️ **Security Critical**):
    ```bash
    # Option 1: Using environment variables
    export AWS_ACCESS_KEY_ID=your_access_key
    export AWS_SECRET_ACCESS_KEY=your_secret_key
-   export AWS_REGION=us-east-1
+   export AWS_REGION=eu-west-1
 
    # Option 2: Create .env file from template
    cp .env.example .env
-   # Edit .env with your AWS credentials
+   # Edit .env with your AWS credentials (NEVER commit this file!)
    ```
+   
+   ⚠️ **Security Note**: See `docs/AWS_SECURITY.md` for detailed security guidelines
 
 2. **Create SQS Queues**:
    ```bash
@@ -217,4 +219,5 @@ Your full-stack application infrastructure is complete and ready for development
 ### 📞 **Need Help?**
 - Check the logs: `./scripts/start.sh` → Option 8
 - View service status: `./scripts/start.sh` → Option 7
+- **Security Guidelines**: Read `docs/AWS_SECURITY.md` for secure AWS setup
 - Read the main README.md for detailed documentation

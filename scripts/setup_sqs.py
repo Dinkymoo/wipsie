@@ -45,7 +45,7 @@ def create_sqs_queues():
             response = sqs.create_queue(
                 QueueName=queue_name,
                 Attributes={
-                    'VisibilityTimeoutSeconds': '300',  # 5 minutes
+                    'VisibilityTimeout': '300',  # 5 minutes
                     'MessageRetentionPeriod': '1209600',  # 14 days
                     'ReceiveMessageWaitTimeSeconds': '20',  # Long polling
                 }
@@ -111,6 +111,7 @@ def list_existing_queues():
 if __name__ == "__main__":
     print("🚀 Setting up SQS queues for Wipsie Celery...")
     print(f"🔑 AWS Region: {settings.AWS_REGION}")
+    print("🛡️  Security Reminder: See docs/AWS_SECURITY.md for best practices")
 
     # Check if AWS credentials are configured
     if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
@@ -120,6 +121,7 @@ if __name__ == "__main__":
         print("1. Set them in your .env file")
         print("2. Set them as environment variables")
         print("3. Use AWS CLI: aws configure")
+        print("🛡️  SECURITY: Never commit credentials to version control!")
         sys.exit(1)
 
     # List existing queues first
@@ -132,7 +134,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("\n💡 Next steps:")
-    print("1. Update your .env file with AWS credentials")
+    print("1. Your AWS credentials are configured ✅")
     print("2. Start your Celery workers:")
     print("   celery -A backend.core.celery_app worker --loglevel=info")
     print("3. Monitor your queues in AWS Console")
+    print("🛡️  Security: Review docs/AWS_SECURITY.md for ongoing practices")

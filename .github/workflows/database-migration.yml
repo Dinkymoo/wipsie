@@ -2,34 +2,34 @@ name: 🗄️ Database Migration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'backend/alembic/versions/**'
-      - 'backend/models/**'
-      - '.github/workflows/database-migration.yml'
+      - "backend/alembic/versions/**"
+      - "backend/models/**"
+      - ".github/workflows/database-migration.yml"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to migrate'
+        description: "Environment to migrate"
         required: true
-        default: 'staging'
+        default: "staging"
         type: choice
         options:
-        - staging
-        - production
+          - staging
+          - production
       migration_action:
-        description: 'Migration action'
+        description: "Migration action"
         required: true
-        default: 'upgrade'
+        default: "upgrade"
         type: choice
         options:
-        - upgrade
-        - downgrade
-        - current
-        - history
+          - upgrade
+          - downgrade
+          - current
+          - history
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: "3.11"
 
 jobs:
   # ===============================================
@@ -38,7 +38,7 @@ jobs:
   validate:
     name: 🧪 Validate Migrations
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -53,48 +53,45 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-    
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: 📦 Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: 🔍 Check Migration Syntax
-      run: |
-        cd backend
-        echo "🔍 Checking Alembic migration syntax..."
-        alembic check || echo "Migration check completed"
-    
-    - name: 🧪 Test Migration on Clean Database
-      run: |
-        cd backend
-        echo "🧪 Testing migration on clean database..."
-        export DATABASE_URL="postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test"
-        alembic upgrade head
-        echo "✅ Migration test successful"
-      env:
-        DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
-    
-    - name: 🔄 Test Migration Rollback
-      run: |
-        cd backend
-        echo "🔄 Testing migration rollback..."
-        export DATABASE_URL="postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test"
-        alembic downgrade -1
-        alembic upgrade head
-        echo "✅ Migration rollback test successful"
-      env:
-        DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔍 Check Migration Syntax
+        run: |
+          echo "🔍 Checking Alembic migration syntax..."
+          alembic check || echo "Migration check completed"
+
+      - name: 🧪 Test Migration on Clean Database
+        run: |
+          echo "🧪 Testing migration on clean database..."
+          export DATABASE_URL="postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test"
+          alembic upgrade head
+          echo "✅ Migration test successful"
+        env:
+          DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
+
+      - name: 🔄 Test Migration Rollback
+        run: |
+          echo "🔄 Testing migration rollback..."
+          export DATABASE_URL="postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test"
+          alembic downgrade -1
+          alembic upgrade head
+          echo "✅ Migration rollback test successful"
+        env:
+          DATABASE_URL: postgresql://postgres:postgres_test_password@localhost:5432/wipsie_test
 
   # ===============================================
   # 🚀 MIGRATE STAGING
@@ -105,81 +102,81 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     environment: staging
-    
+
     steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-    
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: 📦 Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: 🔧 Setup Database Connection
-      run: |
-        echo "🔧 Setting up database connection for staging..."
-        cd backend
-        # Set staging database URL
-        export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
-      env:
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-    
-    - name: 📊 Check Current Migration Status
-      run: |
-        cd backend
-        echo "📊 Checking current migration status..."
-        export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
-        alembic current
-        alembic history --verbose
-      env:
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-    
-    - name: 🗄️ Run Database Migration
-      run: |
-        cd backend
-        echo "🗄️ Running database migration on staging..."
-        export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
-        
-        ACTION="${{ github.event.inputs.migration_action || 'upgrade' }}"
-        
-        case $ACTION in
-          upgrade)
-            echo "⬆️ Upgrading to latest migration..."
-            alembic upgrade head
-            ;;
-          downgrade)
-            echo "⬇️ Downgrading one migration..."
-            alembic downgrade -1
-            ;;
-          current)
-            echo "📍 Current migration status:"
-            alembic current
-            ;;
-          history)
-            echo "📜 Migration history:"
-            alembic history --verbose
-            ;;
-        esac
-        
-        echo "✅ Migration action '$ACTION' completed successfully"
-      env:
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-    
-    - name: ✅ Verify Migration
-      run: |
-        cd backend
-        echo "✅ Verifying migration..."
-        export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
-        alembic current
-        echo "✅ Migration verification completed"
-      env:
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔧 Setup Database Connection
+        run: |
+          echo "🔧 Setting up database connection for staging..."
+          cd backend
+          # Set staging database URL
+          export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: 📊 Check Current Migration Status
+        run: |
+          cd backend
+          echo "📊 Checking current migration status..."
+          export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+          alembic current
+          alembic history --verbose
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: 🗄️ Run Database Migration
+        run: |
+          cd backend
+          echo "🗄️ Running database migration on staging..."
+          export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+
+          ACTION="${{ github.event.inputs.migration_action || 'upgrade' }}"
+
+          case $ACTION in
+            upgrade)
+              echo "⬆️ Upgrading to latest migration..."
+              alembic upgrade head
+              ;;
+            downgrade)
+              echo "⬇️ Downgrading one migration..."
+              alembic downgrade -1
+              ;;
+            current)
+              echo "📍 Current migration status:"
+              alembic current
+              ;;
+            history)
+              echo "📜 Migration history:"
+              alembic history --verbose
+              ;;
+          esac
+
+          echo "✅ Migration action '$ACTION' completed successfully"
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: ✅ Verify Migration
+        run: |
+          cd backend
+          echo "✅ Verifying migration..."
+          export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+          alembic current
+          echo "✅ Migration verification completed"
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
   # ===============================================
   # 🌟 MIGRATE PRODUCTION
@@ -190,109 +187,109 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment: production
-    
+
     steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-    
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: 📦 Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: 🔧 Setup Database Connection
-      run: |
-        echo "🔧 Setting up database connection for production..."
-        cd backend
-        export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
-      env:
-        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-    
-    - name: 💾 Backup Production Database
-      run: |
-        echo "💾 Creating database backup..."
-        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-        BACKUP_NAME="wipsie_backup_${TIMESTAMP}"
-        
-        # Create backup (adjust connection parameters as needed)
-        # pg_dump ${{ secrets.PRODUCTION_DATABASE_URL }} > ${BACKUP_NAME}.sql
-        
-        echo "✅ Database backup created: ${BACKUP_NAME}"
-    
-    - name: 📊 Check Current Migration Status
-      run: |
-        cd backend
-        echo "📊 Checking current production migration status..."
-        export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
-        alembic current
-        alembic history --verbose
-      env:
-        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-    
-    - name: 🗄️ Run Production Migration
-      run: |
-        cd backend
-        echo "🗄️ Running database migration on production..."
-        export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
-        
-        ACTION="${{ github.event.inputs.migration_action || 'upgrade' }}"
-        
-        case $ACTION in
-          upgrade)
-            echo "⬆️ Upgrading production to latest migration..."
-            alembic upgrade head
-            ;;
-          downgrade)
-            echo "⬇️ Downgrading production one migration..."
-            read -p "Are you sure you want to downgrade production? (yes/no): " CONFIRM
-            if [ "$CONFIRM" = "yes" ]; then
-              alembic downgrade -1
-            else
-              echo "Production downgrade cancelled"
-              exit 1
-            fi
-            ;;
-          current)
-            echo "📍 Current production migration status:"
-            alembic current
-            ;;
-          history)
-            echo "📜 Production migration history:"
-            alembic history --verbose
-            ;;
-        esac
-        
-        echo "✅ Production migration action '$ACTION' completed successfully"
-      env:
-        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-    
-    - name: ✅ Verify Production Migration
-      run: |
-        cd backend
-        echo "✅ Verifying production migration..."
-        export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
-        alembic current
-        echo "✅ Production migration verification completed"
-      env:
-        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-    
-    - name: 📢 Notify Migration Completion
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#database'
-        text: |
-          🗄️ Production database migration completed!
-          Action: ${{ github.event.inputs.migration_action || 'upgrade' }}
-          Commit: ${{ github.sha }}
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-      if: always()
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔧 Setup Database Connection
+        run: |
+          echo "🔧 Setting up database connection for production..."
+          cd backend
+          export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: 💾 Backup Production Database
+        run: |
+          echo "💾 Creating database backup..."
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_NAME="wipsie_backup_${TIMESTAMP}"
+
+          # Create backup (adjust connection parameters as needed)
+          # pg_dump ${{ secrets.PRODUCTION_DATABASE_URL }} > ${BACKUP_NAME}.sql
+
+          echo "✅ Database backup created: ${BACKUP_NAME}"
+
+      - name: 📊 Check Current Migration Status
+        run: |
+          cd backend
+          echo "📊 Checking current production migration status..."
+          export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
+          alembic current
+          alembic history --verbose
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: 🗄️ Run Production Migration
+        run: |
+          cd backend
+          echo "🗄️ Running database migration on production..."
+          export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
+
+          ACTION="${{ github.event.inputs.migration_action || 'upgrade' }}"
+
+          case $ACTION in
+            upgrade)
+              echo "⬆️ Upgrading production to latest migration..."
+              alembic upgrade head
+              ;;
+            downgrade)
+              echo "⬇️ Downgrading production one migration..."
+              read -p "Are you sure you want to downgrade production? (yes/no): " CONFIRM
+              if [ "$CONFIRM" = "yes" ]; then
+                alembic downgrade -1
+              else
+                echo "Production downgrade cancelled"
+                exit 1
+              fi
+              ;;
+            current)
+              echo "📍 Current production migration status:"
+              alembic current
+              ;;
+            history)
+              echo "📜 Production migration history:"
+              alembic history --verbose
+              ;;
+          esac
+
+          echo "✅ Production migration action '$ACTION' completed successfully"
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: ✅ Verify Production Migration
+        run: |
+          cd backend
+          echo "✅ Verifying production migration..."
+          export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
+          alembic current
+          echo "✅ Production migration verification completed"
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: 📢 Notify Migration Completion
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: "#database"
+          text: |
+            🗄️ Production database migration completed!
+            Action: ${{ github.event.inputs.migration_action || 'upgrade' }}
+            Commit: ${{ github.sha }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()
 
   # ===============================================
   # 🔄 MIGRATION MONITORING
@@ -302,21 +299,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [migrate-staging, migrate-production]
     if: always()
-    
+
     steps:
-    - name: 📊 Generate Migration Report
-      run: |
-        echo "📊 Generating migration report..."
-        echo "## Migration Summary" >> migration_report.md
-        echo "- **Staging Status**: ${{ needs.migrate-staging.result }}" >> migration_report.md
-        echo "- **Production Status**: ${{ needs.migrate-production.result }}" >> migration_report.md
-        echo "- **Timestamp**: $(date)" >> migration_report.md
-        
-        cat migration_report.md
-    
-    - name: 📤 Upload Migration Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: migration-report
-        path: migration_report.md
-        retention-days: 30
+      - name: 📊 Generate Migration Report
+        run: |
+          echo "📊 Generating migration report..."
+          echo "## Migration Summary" >> migration_report.md
+          echo "- **Staging Status**: ${{ needs.migrate-staging.result }}" >> migration_report.md
+          echo "- **Production Status**: ${{ needs.migrate-production.result }}" >> migration_report.md
+          echo "- **Timestamp**: $(date)" >> migration_report.md
+
+          cat migration_report.md
+
+      - name: 📤 Upload Migration Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-report
+          path: migration_report.md
+          retention-days: 30

@@ -1,0 +1,1 @@
+# Terraform\n.terraform/\n.terraform.lock.hcl\n*.tfstate\n*.tfstate.*\n*.tfplan\n*.tfvars\ncrash.log\ncrash.*.log\noverride.tf\noverride.tf.json\n*_override.tf\n*_override.tf.json\n.terraformrc\nterraform.rc

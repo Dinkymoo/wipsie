@@ -13,8 +13,9 @@ import requests
 
 def lambda_handler(event, context):
     """
-    Enhanced Task Processor Lambda Function
+    Enhanced Task Processor Lambda Function - Staging Deployment
     Processes background tasks asynchronously with improved error handling
+    Version: 1.0.0-staging
     """
 
     try:

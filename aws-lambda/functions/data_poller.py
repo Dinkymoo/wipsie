@@ -13,8 +13,9 @@ import requests
 
 def lambda_handler(event, context):
     """
-    Enhanced Data Poller Lambda Function
+    Enhanced Data Poller Lambda Function - Staging Deployment
     Polls external APIs and stores data through the FastAPI backend
+    Version: 1.0.0-staging
     """
 
     # Configuration from environment variables

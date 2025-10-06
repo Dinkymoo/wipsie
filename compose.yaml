@@ -79,7 +79,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://wipsie_user:wipsie_password@postgres:5432/wipsie
       - REDIS_URL=redis://redis:6379/0
-      - AWS_REGION=eu-west-1
+      - AWS_REGION=us-east-1
       - CELERY_BROKER_URL=sqs://
       - PYTHONPATH=/app
     ports:
@@ -112,7 +112,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://wipsie_user:wipsie_password@postgres:5432/wipsie
       - REDIS_URL=redis://redis:6379/0
-      - AWS_REGION=eu-west-1
+      - AWS_REGION=us-east-1
       - CELERY_BROKER_URL=sqs://
       - PYTHONPATH=/app
     volumes:
@@ -139,7 +139,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://wipsie_user:wipsie_password@postgres:5432/wipsie
       - REDIS_URL=redis://redis:6379/0
-      - AWS_REGION=eu-west-1
+      - AWS_REGION=us-east-1
       - CELERY_BROKER_URL=sqs://
       - PYTHONPATH=/app
     ports:

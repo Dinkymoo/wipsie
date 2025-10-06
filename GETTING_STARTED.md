@@ -2,7 +2,9 @@
 
 ## What We've Built
 
-You now have a **complete, production-ready full-stack application** with:
+You now have a **complete, production-ready full-stack application** w   export AWS_ACCESS_KEY_ID=your-access-key
+   export AWS_SECRET_ACCESS_KEY=your-secret-key
+   export AWS_REGION=us-east-1:
 
 ### 🎯 **Core Technologies**
 - **Backend**: Python FastAPI with async support

@@ -3,7 +3,8 @@ kind: Component
 metadata:
   name: wipsie
   title: Wipsie Full Stack Application
-  description: |
+  description  annotations:
+    aws.amazon.com/arn: "arn:aws:ses:us-east-1:554510949034:identity/*"|
     A modern full-stack application built with FastAPI, Angular, and AWS services.
     Provides data processing, task management, and notification capabilities.
   tags:
@@ -108,7 +109,7 @@ metadata:
     - sqs
     - messaging
   annotations:
-    aws.amazon.com/arn: "arn:aws:sqs:eu-west-1:554510949034:wipsie-*"
+    aws.amazon.com/arn: "arn:aws:sqs:us-east-1:554510949034:wipsie-*"
 spec:
   type: queue
   owner: "platform-team"
@@ -126,7 +127,7 @@ metadata:
     - ses
     - email
   annotations:
-    aws.amazon.com/arn: "arn:aws:ses:eu-west-1:554510949034:identity/*"
+    aws.amazon.com/arn: "arn:aws:ses:us-east-1:554510949034:identity/*"
 spec:
   type: service
   owner: "platform-team"

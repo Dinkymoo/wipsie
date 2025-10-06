@@ -12,7 +12,7 @@ on:
       - "aws-lambda/**"
 
 env:
-  AWS_REGION: "eu-west-1"
+  AWS_REGION: "us-east-1"
   PYTHON_VERSION: "3.11"
 
 jobs:

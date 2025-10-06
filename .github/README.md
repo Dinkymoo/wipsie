@@ -48,9 +48,9 @@ DOCKER_PASSWORD=your_docker_password_or_token
 
 #### AWS Staging Environment
 ```
-AWS_ACCESS_KEY_ID=your_staging_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_staging_aws_secret_key
-AWS_REGION=eu-west-1
+AWS_ACCESS_KEY_ID=your_access_key_here
+AWS_SECRET_ACCESS_KEY=your_secret_key_here
+AWS_REGION=us-east-1
 ```
 
 #### AWS Production Environment

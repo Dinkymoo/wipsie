@@ -278,3 +278,23 @@ create_queues_direct.py
 create_eu_queues.py
 cleanup_us_queues.py
 troubleshoot_sqs.py
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars.backup
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform provider binaries
+infrastructure/.terraform/
+**/terraform-provider-*

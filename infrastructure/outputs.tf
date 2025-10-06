@@ -161,3 +161,49 @@ output "cost_allocation_tags" {
     CostCenter  = "Engineering"
   }
 }
+
+# ====================================================================
+# IAM ROLES OUTPUTS
+# ====================================================================
+
+output "ecs_task_execution_role_arn" {
+  description = "ARN of the ECS task execution role"
+  value       = aws_iam_role.ecs_task_execution_role.arn
+}
+
+output "ecs_task_role_arn" {
+  description = "ARN of the ECS task role for application runtime"
+  value       = aws_iam_role.ecs_task_role.arn
+}
+
+output "lambda_execution_role_arn" {
+  description = "ARN of the Lambda execution role"
+  value       = aws_iam_role.lambda_execution_role.arn
+}
+
+output "ec2_instance_profile_name" {
+  description = "Name of the EC2 instance profile"
+  value       = aws_iam_instance_profile.ec2_instance_profile.name
+}
+
+output "ec2_instance_role_arn" {
+  description = "ARN of the EC2 instance role"
+  value       = aws_iam_role.ec2_instance_role.arn
+}
+
+output "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions role for CI/CD"
+  value       = aws_iam_role.github_actions_role.arn
+  sensitive   = true
+}
+
+output "iam_roles_summary" {
+  description = "Summary of all IAM roles created for secure access"
+  value = {
+    ecs_task_execution_role = aws_iam_role.ecs_task_execution_role.name
+    ecs_task_role           = aws_iam_role.ecs_task_role.name
+    lambda_execution_role   = aws_iam_role.lambda_execution_role.name
+    ec2_instance_role       = aws_iam_role.ec2_instance_role.name
+    github_actions_role     = aws_iam_role.github_actions_role.name
+  }
+}

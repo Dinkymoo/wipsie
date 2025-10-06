@@ -5,7 +5,9 @@ Simple SQS message test - with hardcoded credentials for testing
 
 import json
 import uuid
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
 import boto3
 
@@ -18,7 +20,7 @@ def send_test_message():
     # SQS client with hardcoded credentials (for testing only)
     sqs = boto3.client(
         "sqs",
-        region_name="eu-west-1",
+        region_name="us-east-1",
         aws_access_key_id="AKIAYCG3NTKVNJBJVWIH",
         aws_secret_access_key="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",
     )
@@ -40,7 +42,7 @@ def send_test_message():
 
     # Queue URL
     queue_url = (
-        "https://sqs.eu-west-1.amazonaws.com/" "554510949034/wipsie-default"
+        "https://sqs.us-east-1.amazonaws.com/" "554510949034/wipsie-default"
     )
 
     try:

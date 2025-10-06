@@ -6,9 +6,16 @@ Estimates monthly costs for AWS resources used in the project.
 
 import argparse
 import json
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict
+from dataclasses import (
+    dataclass,
+)
+from datetime import (
+    datetime,
+)
+from typing import (
+    Any,
+    Dict,
+)
 
 
 @dataclass
@@ -23,7 +30,7 @@ class CostEstimate:
 class AWSCostCalculator:
     """Calculate estimated AWS costs for Wipsie resources."""
 
-    # AWS Pricing (EU-West-1, as of 2024)
+    # AWS Pricing (us-east-1, as of 2024)
     LAMBDA_PRICING = {
         "request_price": 0.0000002,  # $0.20 per 1M requests
         "gb_second_price": 0.0000166667,  # Per GB-second

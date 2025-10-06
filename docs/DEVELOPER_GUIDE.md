@@ -260,7 +260,7 @@ pytest -v
    # scripts/create_queue.py
    import boto3
    
-   sqs = boto3.client('sqs', region_name='eu-west-1')
+   sqs = boto3.client('sqs', region_name='us-east-1')
    queue_url = sqs.create_queue(
        QueueName='wipsie-new-queue',
        Attributes={
@@ -297,7 +297,7 @@ Error: Unable to locate credentials
 ```bash
 AWS_ACCESS_KEY_ID=your-key-here
 AWS_SECRET_ACCESS_KEY=your-secret-here
-AWS_REGION=eu-west-1
+AWS_REGION=us-east-1
 ```
 
 #### 2. Celery Worker Won't Start
@@ -380,7 +380,7 @@ logging.basicConfig(level=logging.DEBUG)
 import boto3
 
 def get_queue_metrics():
-    sqs = boto3.client('sqs', region_name='eu-west-1')
+    sqs = boto3.client('sqs', region_name='us-east-1')
     queues = [
         'wipsie-default',
         'wipsie-data-polling', 
@@ -389,7 +389,7 @@ def get_queue_metrics():
     ]
     
     for queue_name in queues:
-        queue_url = f"https://sqs.eu-west-1.amazonaws.com/554510949034/{queue_name}"
+        queue_url = f"https://sqs.us-east-1.amazonaws.com/554510949034/{queue_name}"
         attrs = sqs.get_queue_attributes(
             QueueUrl=queue_url,
             AttributeNames=['ApproximateNumberOfMessages']

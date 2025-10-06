@@ -146,7 +146,7 @@ alembic upgrade head
    # Option 1: Using environment variables
    export AWS_ACCESS_KEY_ID=your_access_key
    export AWS_SECRET_ACCESS_KEY=your_secret_key
-   export AWS_REGION=eu-west-1
+   export AWS_REGION=us-east-1
 
    # Option 2: Create .env file from template
    cp .env.example .env

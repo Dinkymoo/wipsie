@@ -23,13 +23,26 @@ import socket
 import botocore.exceptions
 import botocore.parsers
 import botocore.serialize
-from botocore.config import Config
-from botocore.endpoint import EndpointCreator
-from botocore.regions import EndpointResolverBuiltins as EPRBuiltins
-from botocore.regions import EndpointRulesetResolver
-from botocore.signers import RequestSigner
-from botocore.useragent import UserAgentString
-from botocore.utils import ensure_boolean, is_s3_accelerate_url
+from botocore.config import (
+    Config,
+)
+from botocore.endpoint import (
+    EndpointCreator,
+)
+from botocore.regions import (
+    EndpointResolverBuiltins as EPRBuiltins,
+    EndpointRulesetResolver,
+)
+from botocore.signers import (
+    RequestSigner,
+)
+from botocore.useragent import (
+    UserAgentString,
+)
+from botocore.utils import (
+    ensure_boolean,
+    is_s3_accelerate_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +60,7 @@ LEGACY_GLOBAL_STS_REGIONS = [
     'ca-central-1',
     'eu-central-1',
     'eu-north-1',
-    'eu-west-1',
+    'us-east-1',
     'eu-west-2',
     'eu-west-3',
     'sa-east-1',

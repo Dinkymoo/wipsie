@@ -108,6 +108,9 @@ jobs:
     needs: [test, package]
     if: github.ref == 'refs/heads/develop'
     environment: staging
+    permissions:
+      id-token: write
+      contents: read
 
     strategy:
       matrix:
@@ -126,8 +129,7 @@ jobs:
       - name: 🔧 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🚀 Deploy Lambda Function
@@ -174,6 +176,9 @@ jobs:
     needs: [test, package]
     if: github.ref == 'refs/heads/main'
     environment: production
+    permissions:
+      id-token: write
+      contents: read
 
     strategy:
       matrix:
@@ -192,8 +197,7 @@ jobs:
       - name: 🔧 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🚀 Deploy Production Lambda
@@ -247,6 +251,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment: production
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: 📥 Checkout Code
@@ -255,8 +262,7 @@ jobs:
       - name: 🔧 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🏗️ Deploy CloudFormation Stack

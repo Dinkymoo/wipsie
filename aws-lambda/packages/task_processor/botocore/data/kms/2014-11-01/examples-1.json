@@ -618,8 +618,8 @@
               },
               "ReplicaKeys": [
                 {
-                  "Arn": "arn:aws:kms:eu-west-1:111122223333:key/mrk-1234abcd12ab34cd56ef1234567890ab",
-                  "Region": "eu-west-1"
+                  "Arn": "arn:aws:kms:us-east-1:111122223333:key/mrk-1234abcd12ab34cd56ef1234567890ab",
+                  "Region": "us-east-1"
                 },
                 {
                   "Arn": "arn:aws:kms:ap-northeast-1:111122223333:key/mrk-1234abcd12ab34cd56ef1234567890ab",

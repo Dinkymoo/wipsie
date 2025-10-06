@@ -132,7 +132,7 @@ logs/
 - Use IAM user with limited SQS permissions
 - Store credentials in `.env` file (not committed)
 - Use development-specific queue names (`wipsie-dev-*`)
-- Default region: `eu-west-1` (Ireland)
+- Default region: `us-east-1` (Ireland)
 
 ### **Production Environment:**
 - Use IAM roles instead of access keys when possible

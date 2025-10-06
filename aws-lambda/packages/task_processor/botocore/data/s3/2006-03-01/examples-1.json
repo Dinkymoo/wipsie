@@ -86,7 +86,7 @@
         "input": {
           "Bucket": "examplebucket",
           "CreateBucketConfiguration": {
-            "LocationConstraint": "eu-west-1"
+            "LocationConstraint": "us-east-1"
           }
         },
         "output": {

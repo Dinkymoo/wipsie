@@ -88,7 +88,7 @@ async def list_queues():
     """List available SQS queues"""
     return {
         "available_queues": list(sqs_service.queue_urls.keys()),
-        "region": "eu-west-1",
+        "region": "us-east-1",
     }
 
 

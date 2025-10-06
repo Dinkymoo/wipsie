@@ -1214,8 +1214,8 @@
               "Status": "available"
             },
             {
-              "Endpoint": "https://rds.eu-west-1.amazonaws.com",
-              "RegionName": "eu-west-1",
+              "Endpoint": "https://rds.us-east-1.amazonaws.com",
+              "RegionName": "us-east-1",
               "Status": "available"
             },
             {

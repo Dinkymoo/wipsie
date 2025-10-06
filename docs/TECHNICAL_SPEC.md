@@ -16,7 +16,7 @@ Response:
 ```json
 {
   "available_queues": ["default", "data_polling", "task_processing", "notifications"],
-  "region": "eu-west-1"
+  "region": "us-east-1"
 }
 ```
 
@@ -200,7 +200,7 @@ interface NotificationMessage extends StandardMessage {
 
 ```bash
 # AWS Configuration
-AWS_REGION=eu-west-1
+AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 
@@ -245,7 +245,7 @@ from typing import List
 
 class Settings(BaseSettings):
     # AWS Settings
-    AWS_REGION: str = "eu-west-1"
+    AWS_REGION: str = "us-east-1"
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
     
@@ -441,7 +441,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/wipsie
-      - AWS_REGION=eu-west-1
+      - AWS_REGION=us-east-1
     depends_on:
       - db
     volumes:
@@ -452,7 +452,7 @@ services:
     build: .
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/wipsie
-      - AWS_REGION=eu-west-1
+      - AWS_REGION=us-east-1
     depends_on:
       - db
     volumes:

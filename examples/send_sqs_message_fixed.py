@@ -6,10 +6,14 @@ Send a test message to SQS queue - FIXED VERSION
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import (
+    datetime,
+)
 
 import boto3
-from dotenv import load_dotenv
+from dotenv import (
+    load_dotenv,
+)
 
 # Load environment variables
 load_dotenv()
@@ -23,7 +27,7 @@ def send_message_to_sqs():
     # SQS client using environment variables
     sqs = boto3.client(
         "sqs",
-        region_name="eu-west-1",
+        region_name="us-east-1",
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
@@ -44,7 +48,7 @@ def send_message_to_sqs():
     }
 
     # Queue URL
-    base_url = "https://sqs.eu-west-1.amazonaws.com/554510949034"
+    base_url = "https://sqs.us-east-1.amazonaws.com/554510949034"
     queue_url = f"{base_url}/wipsie-default"
 
     try:
@@ -91,12 +95,12 @@ def check_queue_messages():
 
     sqs = boto3.client(
         "sqs",
-        region_name="eu-west-1",
+        region_name="us-east-1",
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
-    base_url = "https://sqs.eu-west-1.amazonaws.com/554510949034"
+    base_url = "https://sqs.us-east-1.amazonaws.com/554510949034"
     queue_url = f"{base_url}/wipsie-default"
 
     try:

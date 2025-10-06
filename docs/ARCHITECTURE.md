@@ -40,7 +40,7 @@ graph TB
     end
     
     %% Message Queue Layer
-    subgraph "AWS SQS Queues (eu-west-1)"
+    subgraph "AWS SQS Queues (us-east-1)"
         DefaultQ[wipsie-default<br/>General tasks]
         DataPollingQ[wipsie-data-polling<br/>Data collection]
         TaskProcessingQ[wipsie-task-processing<br/>Background tasks]
@@ -211,7 +211,7 @@ mindmap
       Port 8000
     Message Queue
       Amazon SQS
-      eu-west-1 region
+      us-east-1 region
       4 Queues
       IAM Security
     Background Processing
@@ -331,7 +331,7 @@ gitgraph
 
 ### Message Queue Layer
 
-#### Amazon SQS Queues (eu-west-1)
+#### Amazon SQS Queues (us-east-1)
 
 **1. wipsie-default**
 - **Purpose**: General task processing and default message handling
@@ -409,7 +409,7 @@ gitgraph
 - **User**: Dedicated SQS user with minimal permissions
 - **Policies**: 
   - SQS queue access (send/receive/delete)
-  - Regional restriction (eu-west-1 only)
+  - Regional restriction (us-east-1 only)
   - Resource-specific permissions
 - **Credentials**: Environment-based configuration
 - **Status**: ✅ Configured and documented

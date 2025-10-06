@@ -32,7 +32,7 @@ on:
 
 env:
   TERRAFORM_VERSION: "1.6.0"
-  AWS_REGION: "eu-west-1"
+  AWS_REGION: "us-east-1"
 
 jobs:
   # ===============================================
@@ -99,6 +99,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate
     if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+    permissions:
+      id-token: write
+      contents: read
 
     strategy:
       matrix:
@@ -117,8 +120,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         continue-on-error: true
         with:
-          aws-access-key-id: ${{ matrix.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ matrix.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🔧 Terraform Init
@@ -153,6 +155,9 @@ jobs:
     needs: [validate, plan]
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event.inputs.action == 'apply'
     environment: ${{ github.event.inputs.environment || 'staging' }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: 📥 Checkout Code
@@ -167,8 +172,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         continue-on-error: true
         with:
-          aws-access-key-id: ${{ github.event.inputs.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ github.event.inputs.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 📥 Download Terraform Plan
@@ -223,6 +227,9 @@ jobs:
     needs: validate
     if: github.event.inputs.action == 'destroy'
     environment: ${{ github.event.inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: 📥 Checkout Code
@@ -237,8 +244,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         continue-on-error: true
         with:
-          aws-access-key-id: ${{ github.event.inputs.environment == 'production' && secrets.AWS_ACCESS_KEY_ID_PROD || secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ github.event.inputs.environment == 'production' && secrets.AWS_SECRET_ACCESS_KEY_PROD || secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🔧 Terraform Init

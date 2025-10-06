@@ -1,18 +1,67 @@
 # 🚀 Quick Lambda Staging Deployment Guide
 
-## 🚨 Current Issue: AWS Permissions
-Your current AWS user `wipsie-sqs-user` has limited permissions and cannot deploy infrastructure.
+## 🚨 Current Issue: GitHub Actions Credentials Error
+```
+Error: Credentials could not be loaded, please check your action inputs: 
+Could not load credentials from any providers
+```
 
-## ✅ Recommended Solution: Use GitHub Actions
+**Root Cause**: The `GITHUB_ACTIONS_ROLE_ARN` repository variable hasn't been set yet.
+
+## 🔄 The Bootstrap Problem
+This is a "chicken-and-egg" situation:
+- ❌ Need infrastructure deployed to get the GitHub Actions role ARN
+- ❌ Need GitHub Actions role ARN to deploy infrastructure via GitHub Actions
+- ❌ Current AWS user `wipsie-sqs-user` has limited permissions for local deployment
+
+## ✅ Bootstrap Solutions (Choose One)
+
+### Option 1: Manual Infrastructure Bootstrap (RECOMMENDED)
+If you have access to admin AWS credentials:
+
+1. **Get admin AWS credentials** (temporary, just for bootstrap)
+2. **Deploy infrastructure once** to create the OIDC role:
+   ```bash
+   # Configure admin credentials temporarily
+   aws configure --profile bootstrap
+   export AWS_PROFILE=bootstrap
+   
+   # Deploy infrastructure
+   cd infrastructure/
+   terraform init
+   terraform apply -var-file="staging.tfvars"
+   
+   # Get the role ARN
+   terraform output github_actions_role_arn
+   ```
+
+3. **Set repository variable** with the ARN from step 2
+4. **Remove admin credentials** - future deployments use OIDC
+5. **Re-run failed GitHub Actions workflows**
+
+### Option 2: Request IT/DevOps Team
+Ask your DevOps team to:
+1. **Create the GitHub Actions OIDC role** manually in AWS
+2. **Provide you with the role ARN**: `arn:aws:iam::554510949034:role/wipsie-github-actions-role`
+3. **You set it as repository variable**
+
+### Option 3: Temporary IAM User for Bootstrap
+Create a temporary IAM user with infrastructure deployment permissions:
+1. **Create IAM user** with `PowerUserAccess` or custom infrastructure policy
+2. **Use for initial deployment** only
+3. **Delete the user** after OIDC is working
 
 ### Step 1: Deploy Infrastructure via GitHub Actions
+**⚠️ PREREQUISITE**: You need the `GITHUB_ACTIONS_ROLE_ARN` repository variable set first!
+
+After you've bootstrapped the infrastructure (see Bootstrap Solutions above):
 1. **Go to your GitHub repository**
 2. **Click "Actions" tab**
 3. **Find "Infrastructure Deployment" workflow**
 4. **Click "Run workflow"**
 5. **Select:**
    - Branch: `main`
-   - Action: `apply`
+   - Action: `apply` 
    - Environment: `staging`
 6. **Click "Run workflow"**
 

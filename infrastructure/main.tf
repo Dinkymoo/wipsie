@@ -76,28 +76,464 @@ resource "random_id" "redis_suffix" {
 }
 
 # ====================================================================
-# PLANNED INFRASTRUCTURE COMPONENTS
+# NETWORKING INFRASTRUCTURE
 # ====================================================================
-# 
-# The following resources will be implemented in future iterations:
-#
-# 1. NETWORKING
-#    - VPC with public and private subnets across multiple AZs
-#    - Internet Gateway and NAT Gateways
-#    - Route tables and security groups
-#    - VPC endpoints for AWS services
-#
-# 2. COMPUTE
-#    - ECS Cluster with Fargate capacity providers
-#    - Application Load Balancer with HTTPS termination
-#    - Auto Scaling policies based on CPU and memory
-#    - CloudWatch monitoring and alerting
-#
-# 3. DATABASE
-#    - RDS PostgreSQL with Multi-AZ for production
-#    - ElastiCache Redis for session storage and caching
-#    - Database subnet groups and parameter groups
-#    - Automated backups and encryption
+
+# VPC Configuration
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "${var.project_name}-vpc-${var.environment}"
+  }
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-igw-${var.environment}"
+  }
+}
+
+# Public Subnets
+resource "aws_subnet" "public" {
+  count = length(var.public_subnet_cidrs)
+
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "${var.project_name}-public-subnet-${count.index + 1}-${var.environment}"
+    Type = "public"
+  }
+}
+
+# Private Subnets
+resource "aws_subnet" "private" {
+  count = length(var.private_subnet_cidrs)
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.private_subnet_cidrs[count.index]
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name = "${var.project_name}-private-subnet-${count.index + 1}-${var.environment}"
+    Type = "private"
+  }
+}
+
+# Database Subnets
+resource "aws_subnet" "database" {
+  count = length(var.database_subnet_cidrs)
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.database_subnet_cidrs[count.index]
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name = "${var.project_name}-database-subnet-${count.index + 1}-${var.environment}"
+    Type = "database"
+  }
+}
+
+# Elastic IPs for NAT Gateways
+resource "aws_eip" "nat" {
+  count = length(aws_subnet.public)
+
+  domain = "vpc"
+  depends_on = [aws_internet_gateway.main]
+
+  tags = {
+    Name = "${var.project_name}-eip-nat-${count.index + 1}-${var.environment}"
+  }
+}
+
+# NAT Gateways
+resource "aws_nat_gateway" "main" {
+  count = length(aws_subnet.public)
+
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+
+  tags = {
+    Name = "${var.project_name}-nat-${count.index + 1}-${var.environment}"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# Route table for public subnets
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+
+  tags = {
+    Name = "${var.project_name}-public-rt-${var.environment}"
+  }
+}
+
+# Route tables for private subnets
+resource "aws_route_table" "private" {
+  count = length(aws_nat_gateway.main)
+
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
+  }
+
+  tags = {
+    Name = "${var.project_name}-private-rt-${count.index + 1}-${var.environment}"
+  }
+}
+
+# Route table for database subnets
+resource "aws_route_table" "database" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-database-rt-${var.environment}"
+  }
+}
+
+# Route table associations
+resource "aws_route_table_association" "public" {
+  count = length(aws_subnet.public)
+
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "private" {
+  count = length(aws_subnet.private)
+
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
+}
+
+resource "aws_route_table_association" "database" {
+  count = length(aws_subnet.database)
+
+  subnet_id      = aws_subnet.database[count.index].id
+  route_table_id = aws_route_table.database.id
+}
+
+# ====================================================================
+# SECURITY GROUPS
+# ====================================================================
+
+# Application Load Balancer Security Group
+resource "aws_security_group" "alb" {
+  name_prefix = "${var.project_name}-alb-${var.environment}"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-alb-sg-${var.environment}"
+  }
+}
+
+# ECS Security Group
+resource "aws_security_group" "ecs" {
+  name_prefix = "${var.project_name}-ecs-${var.environment}"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "HTTP from ALB"
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-ecs-sg-${var.environment}"
+  }
+}
+
+# RDS Security Group
+resource "aws_security_group" "rds" {
+  name_prefix = "${var.project_name}-rds-${var.environment}"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "PostgreSQL from ECS"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id, aws_security_group.lambda.id]
+  }
+
+  tags = {
+    Name = "${var.project_name}-rds-sg-${var.environment}"
+  }
+}
+
+# Redis Security Group
+resource "aws_security_group" "redis" {
+  name_prefix = "${var.project_name}-redis-${var.environment}"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Redis from ECS"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id, aws_security_group.lambda.id]
+  }
+
+  tags = {
+    Name = "${var.project_name}-redis-sg-${var.environment}"
+  }
+}
+
+# Lambda Security Group
+resource "aws_security_group" "lambda" {
+  name_prefix = "${var.project_name}-lambda-${var.environment}"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-lambda-sg-${var.environment}"
+  }
+}
+
+# ====================================================================
+# LOAD BALANCER
+# ====================================================================
+
+# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "${var.project_name}-alb-${var.environment}"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = aws_subnet.public[*].id
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "${var.project_name}-alb-${var.environment}"
+  }
+}
+
+# Target Group for ECS Service
+resource "aws_lb_target_group" "ecs" {
+  name     = "${var.project_name}-ecs-tg-${var.environment}"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    path                = "/health"
+    matcher             = "200"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+  }
+
+  tags = {
+    Name = "${var.project_name}-ecs-tg-${var.environment}"
+  }
+}
+
+# ALB Listener
+resource "aws_lb_listener" "main" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs.arn
+  }
+
+  tags = {
+    Name = "${var.project_name}-alb-listener-${var.environment}"
+  }
+}
+
+# ====================================================================
+# ECS CLUSTER
+# ====================================================================
+
+# ECS Cluster
+resource "aws_ecs_cluster" "main" {
+  name = "${var.project_name}-cluster-${var.environment}"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
+  tags = {
+    Name = "${var.project_name}-cluster-${var.environment}"
+  }
+}
+
+# ECS Cluster Capacity Providers
+resource "aws_ecs_cluster_capacity_providers" "main" {
+  cluster_name = aws_ecs_cluster.main.name
+
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = "FARGATE"
+  }
+}
+
+# CloudWatch Log Group for ECS
+resource "aws_cloudwatch_log_group" "ecs" {
+  name              = "/ecs/${var.project_name}-${var.environment}"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project_name}-ecs-logs-${var.environment}"
+  }
+}
+
+# ECS Task Definition
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "${var.project_name}-backend-${var.environment}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 512
+  memory                   = 1024
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "backend"
+      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.project_name}-backend:latest"
+      
+      portMappings = [
+        {
+          containerPort = 8000
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "ENVIRONMENT"
+          value = var.environment
+        },
+        {
+          name  = "DATABASE_URL"
+          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+        },
+        {
+          name  = "REDIS_URL"
+          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
+      essential = true
+    }
+  ])
+
+  tags = {
+    Name = "${var.project_name}-backend-task-${var.environment}"
+  }
+}
+
+# ECS Service
+resource "aws_ecs_service" "backend" {
+  name            = "${var.project_name}-backend-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = var.environment == "production" ? 2 : 1
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 100
+  }
+
+  network_configuration {
+    subnets          = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs.arn
+    container_name   = "backend"
+    container_port   = 8000
+  }
+
+  depends_on = [
+    aws_lb_listener.main,
+    aws_iam_role_policy_attachment.ecs_task_execution_role_policy
+  ]
+
+  tags = {
+    Name = "${var.project_name}-backend-service-${var.environment}"
+  }
+}
 #
 # 4. SERVERLESS
 #    - Lambda functions for background processing
@@ -595,4 +1031,512 @@ resource "aws_iam_role_policy" "github_actions_policy" {
       }
     ]
   })
+}
+
+# ====================================================================
+# RDS MONITORING ROLE
+# ====================================================================
+
+# RDS Enhanced Monitoring Role
+resource "aws_iam_role" "rds_monitoring" {
+  name = "${var.project_name}-rds-monitoring-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-rds-monitoring-${var.environment}"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}
+
+# ====================================================================
+# DATABASE INFRASTRUCTURE
+# ====================================================================
+
+# Database Subnet Group
+resource "aws_db_subnet_group" "main" {
+  name       = "${var.project_name}-db-subnet-group-${var.environment}"
+  subnet_ids = aws_subnet.database[*].id
+
+  tags = {
+    Name = "${var.project_name}-db-subnet-group-${var.environment}"
+  }
+}
+
+# RDS Parameter Group
+resource "aws_db_parameter_group" "main" {
+  family = "postgres15"
+  name   = "${var.project_name}-db-params-${var.environment}"
+
+  parameter {
+    name  = "log_statement"
+    value = "all"
+  }
+
+  parameter {
+    name  = "log_min_duration_statement"
+    value = "1000"
+  }
+
+  tags = {
+    Name = "${var.project_name}-db-params-${var.environment}"
+  }
+}
+
+# RDS Instance
+resource "aws_db_instance" "main" {
+  identifier = "${var.project_name}-db-${var.environment}-${random_id.db_suffix.hex}"
+
+  # Engine Configuration
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = var.environment == "production" ? "db.t3.medium" : "db.t3.micro"
+
+  # Database Configuration
+  db_name  = var.db_name
+  username = var.db_username
+  password = var.db_password
+
+  # Storage Configuration
+  allocated_storage     = var.environment == "production" ? 100 : 20
+  max_allocated_storage = var.environment == "production" ? 1000 : 100
+  storage_type          = "gp3"
+  storage_encrypted     = true
+
+  # Network Configuration
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  publicly_accessible    = false
+
+  # High Availability
+  multi_az = var.environment == "production"
+
+  # Backup Configuration
+  backup_retention_period = var.environment == "production" ? 7 : 3
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
+
+  # Performance and Monitoring
+  performance_insights_enabled = true
+  monitoring_interval         = 60
+  monitoring_role_arn        = aws_iam_role.rds_monitoring.arn
+
+  # Parameter Group
+  parameter_group_name = aws_db_parameter_group.main.name
+
+  # Deletion Protection
+  deletion_protection = var.environment == "production"
+  skip_final_snapshot = var.environment != "production"
+
+  tags = {
+    Name = "${var.project_name}-db-${var.environment}"
+  }
+}
+
+# ElastiCache Subnet Group
+resource "aws_elasticache_subnet_group" "main" {
+  name       = "${var.project_name}-cache-subnet-group-${var.environment}"
+  subnet_ids = aws_subnet.database[*].id
+
+  tags = {
+    Name = "${var.project_name}-cache-subnet-group-${var.environment}"
+  }
+}
+
+# ElastiCache Parameter Group
+resource "aws_elasticache_parameter_group" "main" {
+  family = "redis7.x"
+  name   = "${var.project_name}-cache-params-${var.environment}"
+
+  parameter {
+    name  = "maxmemory-policy"
+    value = "allkeys-lru"
+  }
+
+  tags = {
+    Name = "${var.project_name}-cache-params-${var.environment}"
+  }
+}
+
+# ElastiCache Replication Group (Redis)
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id       = "${var.project_name}-cache-${var.environment}-${random_id.redis_suffix.hex}"
+  description                = "Redis cache for ${var.project_name} ${var.environment}"
+
+  # Node Configuration
+  node_type          = var.environment == "production" ? "cache.t3.medium" : "cache.t3.micro"
+  port               = 6379
+  parameter_group_name = aws_elasticache_parameter_group.main.name
+
+  # Replication Configuration
+  num_cache_clusters = var.environment == "production" ? 2 : 1
+
+  # Network Configuration
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [aws_security_group.redis.id]
+
+  # Security
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token                 = var.redis_auth_token
+
+  # Backup Configuration
+  snapshot_retention_limit = var.environment == "production" ? 5 : 1
+  snapshot_window         = "03:00-05:00"
+
+  # Maintenance
+  maintenance_window = "sun:05:00-sun:07:00"
+
+  # Automatic Failover
+  automatic_failover_enabled = var.environment == "production"
+  multi_az_enabled          = var.environment == "production"
+
+  tags = {
+    Name = "${var.project_name}-cache-${var.environment}"
+  }
+}
+
+# ====================================================================
+# LAMBDA FUNCTIONS
+# ====================================================================
+
+# S3 Bucket for Lambda Deployment Packages
+resource "aws_s3_bucket" "lambda_deployments" {
+  bucket = "${var.project_name}-lambda-deployments-${var.environment}-${random_id.db_suffix.hex}"
+
+  tags = {
+    Name = "${var.project_name}-lambda-deployments-${var.environment}"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "lambda_deployments" {
+  bucket = aws_s3_bucket.lambda_deployments.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "lambda_deployments" {
+  bucket = aws_s3_bucket.lambda_deployments.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# CloudWatch Log Groups for Lambda Functions
+resource "aws_cloudwatch_log_group" "data_poller" {
+  name              = "/aws/lambda/${var.project_name}-data-poller-${var.environment}"
+  retention_in_days = 14
+
+  tags = {
+    Name = "${var.project_name}-data-poller-logs-${var.environment}"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "task_processor" {
+  name              = "/aws/lambda/${var.project_name}-task-processor-${var.environment}"
+  retention_in_days = 14
+
+  tags = {
+    Name = "${var.project_name}-task-processor-logs-${var.environment}"
+  }
+}
+
+# Lambda Function: Data Poller
+resource "aws_lambda_function" "data_poller" {
+  function_name = "${var.project_name}-data-poller-${var.environment}"
+  role         = aws_iam_role.lambda_execution_role.arn
+  handler      = "data_poller.lambda_handler"
+  runtime      = "python3.11"
+  timeout      = 300
+
+  # Deployment package (will be updated via CI/CD)
+  filename         = "${path.module}/../aws-lambda/packages/data_poller.zip"
+  source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/data_poller.zip")
+
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+
+  environment {
+    variables = {
+      ENVIRONMENT     = var.environment
+      DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+      BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
+      SQS_QUEUE_URL   = aws_sqs_queue.task_queue.url
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_cloudwatch_log_group.data_poller
+  ]
+
+  tags = {
+    Name = "${var.project_name}-data-poller-${var.environment}"
+  }
+}
+
+# Lambda Function: Task Processor
+resource "aws_lambda_function" "task_processor" {
+  function_name = "${var.project_name}-task-processor-${var.environment}"
+  role         = aws_iam_role.lambda_execution_role.arn
+  handler      = "task_processor.lambda_handler"
+  runtime      = "python3.11"
+  timeout      = 900
+
+  # Deployment package (will be updated via CI/CD)
+  filename         = "${path.module}/../aws-lambda/packages/task_processor.zip"
+  source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/task_processor.zip")
+
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+
+  environment {
+    variables = {
+      ENVIRONMENT     = var.environment
+      DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+      BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
+      REDIS_URL       = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_cloudwatch_log_group.task_processor
+  ]
+
+  tags = {
+    Name = "${var.project_name}-task-processor-${var.environment}"
+  }
+}
+
+# ====================================================================
+# SQS QUEUES
+# ====================================================================
+
+# Main Task Queue
+resource "aws_sqs_queue" "task_queue" {
+  name = "${var.project_name}-task-queue-${var.environment}"
+
+  # Message Configuration
+  visibility_timeout_seconds = 300
+  message_retention_seconds  = 1209600  # 14 days
+  max_message_size          = 262144   # 256 KB
+
+  # Dead Letter Queue Configuration
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.task_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Name = "${var.project_name}-task-queue-${var.environment}"
+  }
+}
+
+# Dead Letter Queue
+resource "aws_sqs_queue" "task_dlq" {
+  name = "${var.project_name}-task-dlq-${var.environment}"
+
+  # Extended retention for failed messages
+  message_retention_seconds = 1209600  # 14 days
+
+  tags = {
+    Name = "${var.project_name}-task-dlq-${var.environment}"
+  }
+}
+
+# SQS Event Source Mapping for Task Processor
+resource "aws_lambda_event_source_mapping" "task_processor" {
+  event_source_arn = aws_sqs_queue.task_queue.arn
+  function_name    = aws_lambda_function.task_processor.arn
+  batch_size       = 10
+}
+
+# EventBridge Rule for Data Poller (runs every 15 minutes)
+resource "aws_cloudwatch_event_rule" "data_poller" {
+  name                = "${var.project_name}-data-poller-schedule-${var.environment}"
+  description         = "Trigger data poller every 15 minutes"
+  schedule_expression = "rate(15 minutes)"
+
+  tags = {
+    Name = "${var.project_name}-data-poller-schedule-${var.environment}"
+  }
+}
+
+# EventBridge Target for Data Poller
+resource "aws_cloudwatch_event_target" "data_poller" {
+  rule      = aws_cloudwatch_event_rule.data_poller.name
+  target_id = "DataPollerTarget"
+  arn       = aws_lambda_function.data_poller.arn
+}
+
+# Lambda Permission for EventBridge
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.data_poller.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.data_poller.arn
+}
+
+# ====================================================================
+# S3 AND CLOUDFRONT
+# ====================================================================
+
+# S3 Bucket for Frontend Static Assets
+resource "aws_s3_bucket" "frontend" {
+  bucket = "${var.project_name}-frontend-${var.environment}-${random_id.db_suffix.hex}"
+
+  tags = {
+    Name = "${var.project_name}-frontend-${var.environment}"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# S3 Bucket Policy for CloudFront
+resource "aws_s3_bucket_policy" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontAccess"
+        Effect    = "Allow"
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.main.iam_arn
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.frontend.arn}/*"
+      }
+    ]
+  })
+}
+
+# CloudFront Origin Access Identity
+resource "aws_cloudfront_origin_access_identity" "main" {
+  comment = "OAI for ${var.project_name} ${var.environment}"
+}
+
+# CloudFront Distribution
+resource "aws_cloudfront_distribution" "main" {
+  origin {
+    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id   = "S3-${aws_s3_bucket.frontend.bucket}"
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.main.cloudfront_access_identity_path
+    }
+  }
+
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+
+  default_cache_behavior {
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-${aws_s3_bucket.frontend.bucket}"
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 3600
+    max_ttl     = 86400
+  }
+
+  # Cache behavior for API calls
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "ALB-${aws_lb.main.name}"
+    compress         = true
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl               = 0
+    default_ttl           = 0
+    max_ttl               = 0
+  }
+
+  # Add ALB as origin for API requests
+  origin {
+    domain_name = aws_lb.main.dns_name
+    origin_id   = "ALB-${aws_lb.main.name}"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-cloudfront-${var.environment}"
+  }
 }

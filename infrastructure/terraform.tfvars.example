@@ -1,0 +1,123 @@
+# ====================================================================
+# WIPSIE TERRAFORM CONFIGURATION - EXAMPLE
+# ====================================================================
+# Copy this file to terraform.tfvars and customize for your environment
+# 
+# WARNING: Never commit terraform.tfvars to version control!
+# Add terraform.tfvars to .gitignore to protect sensitive information.
+
+# ====================================================================
+# CORE CONFIGURATION
+# ====================================================================
+
+# AWS region where all resources will be deployed
+aws_region = "us-east-1"
+
+# Environment name - affects resource naming and configuration
+environment = "staging"
+
+# Project name - used for resource naming and tagging
+project_name = "wipsie"
+
+# ====================================================================
+# NETWORKING CONFIGURATION
+# ====================================================================
+
+# VPC CIDR block - provides IP address range for the entire network
+vpc_cidr = "10.0.0.0/16"
+
+# Public subnets - for load balancers and NAT gateways (internet-facing)
+public_subnet_cidrs = [
+  "10.0.1.0/24",   # us-east-1a
+  "10.0.2.0/24",   # us-east-1b
+  "10.0.3.0/24"    # us-east-1c
+]
+
+# Private subnets - for application servers and Lambda functions
+private_subnet_cidrs = [
+  "10.0.11.0/24",  # us-east-1a
+  "10.0.12.0/24",  # us-east-1b
+  "10.0.13.0/24"   # us-east-1c
+]
+
+# Database subnets - isolated network for RDS and ElastiCache
+database_subnet_cidrs = [
+  "10.0.21.0/24",  # us-east-1a
+  "10.0.22.0/24",  # us-east-1b
+  "10.0.23.0/24"   # us-east-1c
+]
+
+# ====================================================================
+# DATABASE CONFIGURATION
+# ====================================================================
+
+# Database name
+db_name = "wipsie"
+
+# Database master username
+db_username = "postgres"
+
+# Database master password
+# SECURITY: Use a strong password and consider AWS Secrets Manager for production
+db_password = "CHANGE_ME_TO_STRONG_PASSWORD_123!"
+
+# Redis authentication token
+# SECURITY: Use a strong token and consider AWS Secrets Manager for production
+redis_auth_token = "CHANGE_ME_TO_STRONG_REDIS_TOKEN_456!"
+
+# ====================================================================
+# COMPUTE CONFIGURATION
+# ====================================================================
+
+# ECS task CPU units (256 = 0.25 vCPU, 512 = 0.5 vCPU, etc.)
+ecs_task_cpu = 512
+
+# ECS task memory in MB
+ecs_task_memory = 1024
+
+# RDS instance class - determines CPU, memory, and network performance
+# Options: db.t3.micro (free tier), db.t3.small, db.t3.medium, etc.
+rds_instance_class = "db.t3.micro"
+
+# ====================================================================
+# ENVIRONMENT-SPECIFIC EXAMPLES
+# ====================================================================
+
+# 🚀 STAGING ENVIRONMENT (Cost-optimized for development)
+# aws_region = "us-east-1"
+# environment = "staging"
+# ecs_task_cpu = 256
+# ecs_task_memory = 512
+# rds_instance_class = "db.t3.micro"
+
+# 🏭 PRODUCTION ENVIRONMENT (Performance-optimized)
+# aws_region = "us-east-1"
+# environment = "production"
+# ecs_task_cpu = 1024
+# ecs_task_memory = 2048
+# rds_instance_class = "db.t3.medium"
+
+# ====================================================================
+# SECURITY REMINDERS
+# ====================================================================
+#
+# 🔐 IMPORTANT SECURITY NOTES:
+# 1. Never commit this file with real passwords to version control
+# 2. Use AWS Secrets Manager or Parameter Store for production passwords
+# 3. Enable MFA on your AWS account
+# 4. Use IAM roles instead of access keys when possible
+# 5. Regularly rotate passwords and access keys
+# 6. Consider using AWS KMS for encryption at rest
+# 7. Enable CloudTrail for auditing
+#
+# 🛡️ PRODUCTION SECURITY CHECKLIST:
+# ☐ Change all default passwords
+# ☐ Enable encryption for RDS and S3
+# ☐ Configure backup retention policies
+# ☐ Set up monitoring and alerting
+# ☐ Enable AWS Config for compliance
+# ☐ Review security groups and NACLs
+# ☐ Enable VPC Flow Logs
+# ☐ Configure AWS WAF for web applications
+#
+# ====================================================================

@@ -34,93 +34,174 @@ output "availability_zones" {
 }
 
 # ====================================================================
-# NETWORKING OUTPUTS (PLACEHOLDER - TO BE IMPLEMENTED)
+# NETWORKING OUTPUTS
 # ====================================================================
-# These outputs will be updated when actual VPC resources are created
 
 output "vpc_id" {
-  description = "ID of the VPC (placeholder until VPC is created)"
-  value       = "vpc-placeholder-${var.environment}"
+  description = "ID of the VPC"
+  value       = aws_vpc.main.id
 }
 
 output "vpc_cidr_block" {
   description = "CIDR block of the VPC"
-  value       = var.vpc_cidr
+  value       = aws_vpc.main.cidr_block
 }
 
 output "public_subnet_ids" {
-  description = "IDs of the public subnets (placeholder until subnets are created)"
-  value = [
-    "subnet-placeholder-public-1-${var.environment}",
-    "subnet-placeholder-public-2-${var.environment}"
-  ]
+  description = "IDs of public subnets"
+  value       = aws_subnet.public[*].id
 }
 
 output "private_subnet_ids" {
-  description = "IDs of the private subnets (placeholder until subnets are created)"
-  value = [
-    "subnet-placeholder-private-1-${var.environment}",
-    "subnet-placeholder-private-2-${var.environment}"
-  ]
+  description = "IDs of private subnets"
+  value       = aws_subnet.private[*].id
 }
 
-output "database_subnet_group_name" {
-  description = "Name of the database subnet group (placeholder until created)"
-  value       = "wipsie-${var.environment}-db-subnet-group"
+output "database_subnet_ids" {
+  description = "IDs of database subnets"
+  value       = aws_subnet.database[*].id
+}
+
+output "internet_gateway_id" {
+  description = "ID of the Internet Gateway"
+  value       = aws_internet_gateway.main.id
+}
+
+output "nat_gateway_ids" {
+  description = "IDs of NAT Gateways"
+  value       = aws_nat_gateway.main[*].id
 }
 
 # ====================================================================
-# COMPUTE OUTPUTS (PLACEHOLDER - TO BE IMPLEMENTED)
+# COMPUTE OUTPUTS
 # ====================================================================
 
 output "ecs_cluster_name" {
-  description = "Name of the ECS cluster (placeholder until cluster is created)"
-  value       = "wipsie-${var.environment}-cluster"
+  description = "Name of the ECS cluster"
+  value       = aws_ecs_cluster.main.name
 }
 
 output "ecs_cluster_arn" {
-  description = "ARN of the ECS cluster (placeholder until cluster is created)"
-  value       = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/wipsie-${var.environment}-cluster"
+  description = "ARN of the ECS cluster"
+  value       = aws_ecs_cluster.main.arn
 }
 
-output "load_balancer_dns_name" {
-  description = "DNS name of the application load balancer (placeholder until ALB is created)"
-  value       = "wipsie-${var.environment}-alb.${var.aws_region}.elb.amazonaws.com"
+output "application_load_balancer_dns" {
+  description = "DNS name of the Application Load Balancer"
+  value       = aws_lb.main.dns_name
 }
 
-output "load_balancer_zone_id" {
-  description = "Hosted zone ID of the load balancer for Route 53 alias records"
-  value       = "Z35SXDOTRQ7X7K" # Standard ALB zone ID for us-east-1 (will be dynamic when ALB is created)
+output "application_load_balancer_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = aws_lb.main.arn
+}
+
+output "ecs_service_name" {
+  description = "Name of the ECS service"
+  value       = aws_ecs_service.backend.name
 }
 
 # ====================================================================
-# DATABASE OUTPUTS (PLACEHOLDER - TO BE IMPLEMENTED)
+# DATABASE OUTPUTS
 # ====================================================================
 
 output "rds_endpoint" {
-  description = "RDS PostgreSQL instance endpoint (placeholder until RDS is created)"
-  value       = "wipsie-${var.environment}-db.${random_id.db_suffix.hex}.${var.aws_region}.rds.amazonaws.com"
+  description = "RDS PostgreSQL instance endpoint"
+  value       = aws_db_instance.main.endpoint
   sensitive   = true
+}
+
+output "rds_database_name" {
+  description = "Name of the database"
+  value       = aws_db_instance.main.db_name
 }
 
 output "redis_endpoint" {
-  description = "Redis cluster primary endpoint (placeholder until ElastiCache is created)"
-  value       = "wipsie-${var.environment}-redis.${random_id.redis_suffix.hex}.cache.amazonaws.com"
+  description = "Redis cluster primary endpoint"
+  value       = aws_elasticache_replication_group.main.primary_endpoint_address
   sensitive   = true
 }
 
+output "database_subnet_group_name" {
+  description = "Name of the database subnet group"
+  value       = aws_db_subnet_group.main.name
+}
+
 # ====================================================================
-# SECURITY OUTPUTS (PLACEHOLDER - TO BE IMPLEMENTED)
+# SECURITY OUTPUTS
 # ====================================================================
 
-output "app_security_group_id" {
-  description = "Security group ID for application servers (placeholder)"
-  value       = "sg-placeholder-app-${var.environment}"
+output "alb_security_group_id" {
+  description = "Security group ID for Application Load Balancer"
+  value       = aws_security_group.alb.id
+}
+
+output "ecs_security_group_id" {
+  description = "Security group ID for ECS tasks"
+  value       = aws_security_group.ecs.id
 }
 
 output "database_security_group_id" {
-  description = "Security group ID for database servers (placeholder)"
-  value       = "sg-placeholder-db-${var.environment}"
+  description = "Security group ID for database servers"
+  value       = aws_security_group.rds.id
+}
+
+output "redis_security_group_id" {
+  description = "Security group ID for Redis cluster"
+  value       = aws_security_group.redis.id
+}
+
+output "lambda_security_group_id" {
+  description = "Security group ID for Lambda functions"
+  value       = aws_security_group.lambda.id
+}
+
+# ====================================================================
+# LAMBDA OUTPUTS
+# ====================================================================
+
+output "lambda_data_poller_arn" {
+  description = "ARN of the data poller Lambda function"
+  value       = aws_lambda_function.data_poller.arn
+}
+
+output "lambda_task_processor_arn" {
+  description = "ARN of the task processor Lambda function"
+  value       = aws_lambda_function.task_processor.arn
+}
+
+output "sqs_task_queue_url" {
+  description = "URL of the main task queue"
+  value       = aws_sqs_queue.task_queue.url
+}
+
+output "sqs_dlq_url" {
+  description = "URL of the dead letter queue"
+  value       = aws_sqs_queue.task_dlq.url
+}
+
+# ====================================================================
+# S3 AND CLOUDFRONT OUTPUTS
+# ====================================================================
+
+output "s3_frontend_bucket" {
+  description = "Name of the S3 bucket for frontend assets"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
+output "s3_lambda_deployments_bucket" {
+  description = "Name of the S3 bucket for Lambda deployment packages"
+  value       = aws_s3_bucket.lambda_deployments.bucket
+}
+
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = aws_cloudfront_distribution.main.id
+}
+
+output "cloudfront_domain_name" {
+  description = "Domain name of the CloudFront distribution"
+  value       = aws_cloudfront_distribution.main.domain_name
 }
 
 output "secrets_manager_arn" {

@@ -298,3 +298,4 @@ terraform.rc
 # Terraform provider binaries
 infrastructure/.terraform/
 **/terraform-provider-*
+infrastructure/terraform.tfvars

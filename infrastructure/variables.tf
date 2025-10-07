@@ -63,6 +63,43 @@ variable "enable_nat_gateway" {
 }
 
 # ====================================================================
+# SUBNET CONFIGURATION
+# ====================================================================
+
+variable "public_subnet_cidrs" {
+  description = "List of CIDR blocks for public subnets"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+
+  validation {
+    condition     = length(var.public_subnet_cidrs) >= 2
+    error_message = "At least 2 public subnets are required for high availability."
+  }
+}
+
+variable "private_subnet_cidrs" {
+  description = "List of CIDR blocks for private subnets"
+  type        = list(string)
+  default     = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+
+  validation {
+    condition     = length(var.private_subnet_cidrs) >= 2
+    error_message = "At least 2 private subnets are required for high availability."
+  }
+}
+
+variable "database_subnet_cidrs" {
+  description = "List of CIDR blocks for database subnets"
+  type        = list(string)
+  default     = ["10.0.21.0/24", "10.0.22.0/24", "10.0.23.0/24"]
+
+  validation {
+    condition     = length(var.database_subnet_cidrs) >= 2
+    error_message = "At least 2 database subnets are required for RDS Multi-AZ."
+  }
+}
+
+# ====================================================================
 # DATABASE CONFIGURATION
 # ====================================================================
 
@@ -74,6 +111,56 @@ variable "rds_instance_class" {
   validation {
     condition     = can(regex("^db\\.[a-z0-9]+\\.[a-z0-9]+$", var.rds_instance_class))
     error_message = "RDS instance class must be in format like 'db.t3.micro' or 'db.r5.large'."
+  }
+}
+
+# ====================================================================
+# DATABASE CREDENTIALS
+# ====================================================================
+
+variable "db_name" {
+  description = "Database name"
+  type        = string
+  default     = "wipsie"
+
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9_]*$", var.db_name))
+    error_message = "Database name must start with a letter and contain only letters, numbers, and underscores."
+  }
+}
+
+variable "db_username" {
+  description = "Database master username"
+  type        = string
+  default     = "postgres"
+
+  validation {
+    condition     = length(var.db_username) >= 1 && length(var.db_username) <= 63
+    error_message = "Database username must be between 1 and 63 characters."
+  }
+}
+
+variable "db_password" {
+  description = "Database master password"
+  type        = string
+  sensitive   = true
+  default     = "ChangeMe123!"
+
+  validation {
+    condition     = length(var.db_password) >= 8
+    error_message = "Database password must be at least 8 characters long."
+  }
+}
+
+variable "redis_auth_token" {
+  description = "Redis authentication token"
+  type        = string
+  sensitive   = true
+  default     = "ChangeMe123RedisToken!"
+
+  validation {
+    condition     = length(var.redis_auth_token) >= 16
+    error_message = "Redis auth token must be at least 16 characters long."
   }
 }
 

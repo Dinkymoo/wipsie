@@ -4,15 +4,27 @@ A modern, cloud-native full-stack application built with **FastAPI**, **Angular*
 
 ## 💰 **Cost-Optimized Learning Environment**
 
-**Monthly Cost: ~$13-18** (down from ~$87-91 - **85% savings!**)
+**Flexible Database Costs: $0-35/month** (choose based on learning phase)
 
-- ✅ **RDS PostgreSQL**: Database learning ($13/month)
-- ✅ **ECS + Lambda**: Container & serverless learning (free tier)
-- ✅ **S3 + SQS**: Storage & messaging learning (~$1-3/month)
-- ✅ **VPC + Security Groups**: Networking learning (free)
-- 🔧 **Optional Services**: Enable as needed for specific learning modules
+### 🗄️ Database Options
+| Mode | Cost | Database | Best For |
+|------|------|----------|----------|
+| **Ultra-Budget** | **$0/month** | SQLite in containers | Testing, quick experiments |
+| **Containerized** | **$1-5/month** | PostgreSQL on Fargate Spot | Active learning, pausable |
+| **Learning RDS** | **$12-15/month** | Managed PostgreSQL | Consistent learning |
+| **Development** | **$25-35/month** | Full RDS features | Serious development |
 
-**[📖 View Complete Cost Optimization Guide →](docs/COST_OPTIMIZATION_COMPLETE.md)**
+### ⚡ Quick Database Switching
+```bash
+# Interactive database optimizer
+./scripts/database-cost-optimizer.sh
+
+# Or direct Terraform commands
+terraform apply -var-file="database-ultra-budget.tfvars"  # $0/month
+terraform apply -var-file="database-learning.tfvars"     # $12-15/month
+```
+
+**[📖 View Database Cost Optimization Guide →](docs/DATABASE_COST_OPTIMIZATION.md)**
 
 ## 💰 Cost Optimization
 
@@ -52,6 +64,35 @@ terraform apply -var="enable_nat_gateway=true"
 | **Phase 2** | $29-34 | + Load Balancer | Traffic management, SSL |
 | **Phase 3** | $41-46 | + Redis Cache | Performance, caching strategies |
 | **Phase 4** | $86-91 | + NAT + CloudFront | Production architecture |
+
+## 📊 Cost Monitoring & Management
+
+### Real-Time Cost Tracking
+```bash
+# Quick cost overview
+./scripts/cost-monitor.sh
+
+# Interactive database optimizer
+./scripts/database-cost-optimizer.sh
+
+# Web dashboard (after deployment)
+open http://localhost:3000/dashboard
+```
+
+### Cost Management Commands
+```bash
+# Check current database mode
+cd infrastructure && terraform show | grep -E "(db_instance|ecs_service.*database)"
+
+# Switch to ultra-budget mode ($0 database)
+terraform apply -var-file="database-ultra-budget.tfvars" -auto-approve
+
+# Scale down all services to save costs
+aws ecs update-service --cluster wipsie-cluster --service backend --desired-count 0
+
+# Monitor AWS costs via CLI
+aws ce get-cost-and-usage --time-period Start=2024-01-01,End=2024-01-31 --granularity MONTHLY --metrics BlendedCost
+```
 
 ## 📁 Project Structure
 
@@ -99,6 +140,36 @@ wipsie/
 │   ├── tools/                  # AWS management utilities
 │   ├── examples/               # Code examples and demos
 │   └── archive/                # Deprecated/backup files
+```
+
+## 🎯 **Quick Start**
+
+### All-in-One Learning Manager
+```bash
+# Interactive learning environment manager
+./scripts/wipsie-manager.sh
+```
+
+This interactive tool provides:
+- 🗄️ Database cost optimization ($0-35/month options)
+- 📊 Real-time cost monitoring
+- 🚀 One-click deployments
+- 📈 Resource dashboards
+- 💡 Learning guides
+- 🧪 Development environments
+
+### Direct Commands
+```bash
+# Database optimization
+./scripts/database-cost-optimizer.sh
+
+# Cost monitoring
+./scripts/cost-monitor.sh
+
+# Quick deployments
+./scripts/deploy-backend.sh
+./scripts/deploy-frontend.sh
+./scripts/deploy-full-system.sh
 ```
 
 ## 🏃‍♂️ Quick Start

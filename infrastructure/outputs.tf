@@ -107,13 +107,13 @@ output "application_load_balancer_arn" {
 
 output "rds_endpoint" {
   description = "RDS PostgreSQL instance endpoint"
-  value       = aws_db_instance.main.endpoint
+  value       = var.enable_database ? aws_db_instance.main[0].endpoint : null
   sensitive   = true
 }
 
 output "rds_database_name" {
   description = "Name of the database"
-  value       = aws_db_instance.main.db_name
+  value       = var.enable_database ? aws_db_instance.main[0].db_name : var.db_name
 }
 
 output "redis_endpoint" {

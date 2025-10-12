@@ -1149,54 +1149,89 @@ resource "aws_db_parameter_group" "main" {
   }
 }
 
-# RDS Instance
+# RDS Instance with Cost Optimization
 resource "aws_db_instance" "main" {
+  count = var.enable_database ? 1 : 0
+  
   identifier = "${var.project_name}-db-${var.environment}-${random_id.db_suffix.hex}"
 
   # Engine Configuration
   engine         = "postgres"
   engine_version = "15.12"
-  instance_class = var.environment == "production" ? "db.t3.medium" : "db.t3.micro"
+  
+  # Instance class based on database mode
+  instance_class = local.database_instance_class
 
   # Database Configuration
   db_name  = var.db_name
   username = var.db_username
   password = var.db_password
 
-  # Storage Configuration
-  allocated_storage     = var.environment == "production" ? 100 : 20
-  max_allocated_storage = var.environment == "production" ? 1000 : 100
+  # Storage Configuration - optimized based on mode
+  allocated_storage     = local.database_storage_size
+  max_allocated_storage = local.database_max_storage
   storage_type          = "gp3"
-  storage_encrypted     = true
+  storage_encrypted     = var.database_mode != "ultra-budget"
 
   # Network Configuration
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   publicly_accessible    = false
 
-  # High Availability
-  multi_az = var.environment == "production"
+  # High Availability - cost optimization
+  multi_az = var.enable_database_multi_az
 
-  # Backup Configuration
-  backup_retention_period = var.environment == "production" ? 7 : 3
-  backup_window          = "03:00-04:00"
+  # Backup Configuration - major cost saver
+  backup_retention_period = var.database_backup_retention
+  backup_window          = var.database_backup_retention > 0 ? "03:00-04:00" : null
   maintenance_window     = "sun:04:00-sun:05:00"
 
-  # Performance and Monitoring
-  performance_insights_enabled = true
-  monitoring_interval         = 0  # Disabled due to IAM permissions
-  # monitoring_role_arn        = aws_iam_role.rds_monitoring.arn
+  # Performance and Monitoring - cost controls
+  performance_insights_enabled = var.database_performance_insights
+  monitoring_interval         = var.database_monitoring_interval
 
   # Parameter Group
   parameter_group_name = aws_db_parameter_group.main.name
 
-  # Deletion Protection
-  deletion_protection = var.environment == "production"
-  skip_final_snapshot = var.environment != "production"
+  # Deletion Protection - learning environment settings
+  deletion_protection = var.database_deletion_protection
+  skip_final_snapshot = var.database_skip_final_snapshot
 
   tags = {
     Name = "${var.project_name}-db-${var.environment}"
+    Mode = var.database_mode
+    CostOptimized = var.database_mode == "ultra-budget" ? "true" : "false"
   }
+}
+
+# Local values for database cost optimization
+locals {
+  database_configs = {
+    "ultra-budget" = {
+      instance_class = "db.t3.micro"
+      storage_size   = 20
+      max_storage    = 50
+    }
+    "learning" = {
+      instance_class = "db.t3.micro"
+      storage_size   = 20
+      max_storage    = 100
+    }
+    "development" = {
+      instance_class = "db.t3.small"
+      storage_size   = 50
+      max_storage    = 200
+    }
+    "production" = {
+      instance_class = "db.t3.medium"
+      storage_size   = 100
+      max_storage    = 1000
+    }
+  }
+  
+  database_instance_class = local.database_configs[var.database_mode].instance_class
+  database_storage_size   = local.database_configs[var.database_mode].storage_size
+  database_max_storage    = local.database_configs[var.database_mode].max_storage
 }
 
 # ElastiCache Subnet Group

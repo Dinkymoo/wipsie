@@ -1,0 +1,47 @@
+# Wipsie Backend Requirements
+# Core FastAPI and ASGI server dependencies
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# AWS SDK
+boto3==1.34.0
+botocore==1.34.0
+
+# Async support
+asyncpg==0.29.0
+httpx==0.25.2
+
+# Data validation and serialization
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Monitoring and logging
+structlog==23.2.0
+
+# Development and testing (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Database migration
+yoyo-migrations==8.2.0
+
+# Task queue support
+celery==5.3.4
+
+# Additional utilities
+python-multipart==0.0.6
+jinja2==3.1.2

@@ -1,0 +1,142 @@
+name: Deploy Database to Aurora
+
+on:
+    push:
+        branches: [main, develop]
+        paths:
+            - "backend/alembic/versions/**"
+            - "backend/models/**"
+            - ".github/workflows/deploy-database.yml"
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Environment to deploy to"
+                required: true
+                default: "learning"
+                type: choice
+                options:
+                    - learning
+                    - staging
+                    - production
+
+env:
+    AWS_REGION: us-east-1
+
+jobs:
+    deploy-database:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+                  pip install psycopg[binary]
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Get Aurora endpoint
+              id: aurora
+              run: |
+                  AURORA_ENDPOINT=$(aws rds describe-db-clusters \
+                    --query 'DBClusters[?contains(DBClusterIdentifier, `wipsie`) && contains(DBClusterIdentifier, `${{ github.event.inputs.environment || 'learning' }}`)].Endpoint' \
+                    --output text)
+
+                  if [ -z "$AURORA_ENDPOINT" ] || [ "$AURORA_ENDPOINT" = "None" ]; then
+                    echo "❌ Aurora cluster not found for environment: ${{ github.event.inputs.environment || 'learning' }}"
+                    exit 1
+                  fi
+
+                  echo "aurora-endpoint=$AURORA_ENDPOINT" >> $GITHUB_OUTPUT
+                  echo "✅ Found Aurora endpoint: $AURORA_ENDPOINT"
+
+            - name: Deploy database schema
+              env:
+                  DATABASE_URL: postgresql+psycopg://postgres:${{ secrets.AURORA_DB_PASSWORD }}@${{ steps.aurora.outputs.aurora-endpoint }}:5432/wipsie
+              run: |
+                  echo "🚀 Deploying database schema to Aurora..."
+
+                  # Test connection
+                  python -c "
+                  import psycopg
+                  try:
+                      conn = psycopg.connect('$DATABASE_URL')
+                      conn.close()
+                      print('✅ Database connection successful!')
+                  except Exception as e:
+                      print(f'❌ Database connection failed: {e}')
+                      exit(1)
+                  "
+
+                  # Create database if it doesn't exist
+                  python -c "
+                  import psycopg
+                  from psycopg.sql import SQL, Identifier
+
+                  postgres_url = '$DATABASE_URL'.replace('/wipsie', '/postgres')
+                  try:
+                      conn = psycopg.connect(postgres_url, autocommit=True)
+                      cursor = conn.cursor()
+                      
+                      cursor.execute('SELECT 1 FROM pg_database WHERE datname = %s', ('wipsie',))
+                      if not cursor.fetchone():
+                          cursor.execute(SQL('CREATE DATABASE {}').format(Identifier('wipsie')))
+                          print('✅ Created wipsie database')
+                      else:
+                          print('✅ wipsie database already exists')
+                      
+                      conn.close()
+                  except Exception as e:
+                      print(f'❌ Failed to create database: {e}')
+                      exit(1)
+                  "
+
+                  # Run Alembic migrations
+                  alembic upgrade head
+
+                  echo "✅ Database deployment completed!"
+
+            - name: Verify deployment
+              env:
+                  DATABASE_URL: postgresql+psycopg://postgres:${{ secrets.AURORA_DB_PASSWORD }}@${{ steps.aurora.outputs.aurora-endpoint }}:5432/wipsie
+              run: |
+                  echo "🔍 Verifying database deployment..."
+                  python -c "
+                  import psycopg
+
+                  conn = psycopg.connect('$DATABASE_URL')
+                  cursor = conn.cursor()
+
+                  # Check tables exist
+                  cursor.execute(\"\"\"
+                  SELECT table_name FROM information_schema.tables 
+                  WHERE table_schema = 'public' 
+                  ORDER BY table_name;
+                  \"\"\")
+
+                  tables = cursor.fetchall()
+                  print('📋 Database tables:')
+                  for table in tables:
+                      print(f'  ✅ {table[0]}')
+
+                  # Check alembic version
+                  cursor.execute('SELECT version_num FROM alembic_version;')
+                  version = cursor.fetchone()
+                  print(f'📌 Alembic version: {version[0] if version else \"None\"}')
+
+                  conn.close()
+                  print('✅ Database verification completed!')
+                  "

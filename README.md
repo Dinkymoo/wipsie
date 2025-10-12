@@ -1,6 +1,57 @@
 # 🚀 Wipsie Full Stack Application
 
-A modern, cloud-native full-stack application built with **FastAPI**, **Angular**, **PostgreSQL**, **Redis**, **AWS SQS/SES**, and **Celery**.
+A modern, cloud-native full-stack application built with **FastAPI**, **Angular**, **PostgreSQL**, and **AWS services**. Optimized for **cost-effective learning** with an **85% cost reduction** architecture.
+
+## 💰 **Cost-Optimized Learning Environment**
+
+**Monthly Cost: ~$13-18** (down from ~$87-91 - **85% savings!**)
+
+- ✅ **RDS PostgreSQL**: Database learning ($13/month)
+- ✅ **ECS + Lambda**: Container & serverless learning (free tier)
+- ✅ **S3 + SQS**: Storage & messaging learning (~$1-3/month)
+- ✅ **VPC + Security Groups**: Networking learning (free)
+- 🔧 **Optional Services**: Enable as needed for specific learning modules
+
+**[📖 View Complete Cost Optimization Guide →](docs/COST_OPTIMIZATION_COMPLETE.md)**
+
+## 💰 Cost Optimization
+
+This project implements aggressive cost optimization for learning environments:
+
+### Quick Start - Ultra Budget ($13-18/month)
+```bash
+cd infrastructure
+terraform apply -var-file=ultra-budget.tfvars -auto-approve
+```
+
+### Enable Services for Learning
+```bash
+# Database learning
+terraform apply -var="enable_rds=true"
+
+# Load balancing learning  
+terraform apply -var="enable_alb=true"
+
+# Caching learning
+terraform apply -var="enable_redis=true"
+
+# Private networking learning
+terraform apply -var="enable_nat_gateway=true"
+```
+
+### Documentation
+- **[Complete Cost Guide](docs/COST_OPTIMIZATION_COMPLETE.md)** - Detailed optimization documentation
+- **[Quick Reference](docs/COST_OPTIMIZATION_QUICK_REFERENCE.md)** - Commands and summary
+- **[Configuration Files](docs/CONFIGURATION_FILES_SUMMARY.md)** - All config files explained
+
+## 🎓 **Learning Path**
+
+| Phase | Monthly Cost | Services | Learning Focus |
+|-------|--------------|----------|----------------|
+| **Phase 1** | $13-18 | RDS + Core Services | Database, containers, basics |
+| **Phase 2** | $29-34 | + Load Balancer | Traffic management, SSL |
+| **Phase 3** | $41-46 | + Redis Cache | Performance, caching strategies |
+| **Phase 4** | $86-91 | + NAT + CloudFront | Production architecture |
 
 ## 📁 Project Structure
 

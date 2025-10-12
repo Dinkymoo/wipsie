@@ -68,8 +68,8 @@ output "internet_gateway_id" {
 }
 
 output "nat_gateway_ids" {
-  description = "IDs of NAT Gateways"
-  value       = aws_nat_gateway.main[*].id
+  description = "IDs of NAT Gateways (single NAT for cost optimization)"
+  value       = var.enable_nat_gateway ? aws_nat_gateway.main[*].id : []
 }
 
 # ====================================================================
@@ -96,10 +96,10 @@ output "application_load_balancer_arn" {
   value       = aws_lb.main.arn
 }
 
-output "ecs_service_name" {
-  description = "Name of the ECS service"
-  value       = aws_ecs_service.backend.name
-}
+# output "ecs_service_name" {
+#   description = "Name of the ECS service"
+#   value       = aws_ecs_service.backend.name
+# }
 
 # ====================================================================
 # DATABASE OUTPUTS
@@ -160,15 +160,15 @@ output "lambda_security_group_id" {
 # LAMBDA OUTPUTS
 # ====================================================================
 
-output "lambda_data_poller_arn" {
-  description = "ARN of the data poller Lambda function"
-  value       = aws_lambda_function.data_poller.arn
-}
+# output "lambda_data_poller_arn" {
+#   description = "ARN of the data poller Lambda function"
+#   value       = aws_lambda_function.data_poller.arn
+# }
 
-output "lambda_task_processor_arn" {
-  description = "ARN of the task processor Lambda function"
-  value       = aws_lambda_function.task_processor.arn
-}
+# output "lambda_task_processor_arn" {
+#   description = "ARN of the task processor Lambda function"
+#   value       = aws_lambda_function.task_processor.arn
+# }
 
 output "sqs_task_queue_url" {
   description = "URL of the main task queue"
@@ -244,47 +244,48 @@ output "cost_allocation_tags" {
 }
 
 # ====================================================================
-# IAM ROLES OUTPUTS
+# IAM ROLES OUTPUTS - Commented out due to IAM permissions
 # ====================================================================
 
-output "ecs_task_execution_role_arn" {
-  description = "ARN of the ECS task execution role"
-  value       = aws_iam_role.ecs_task_execution_role.arn
-}
+# output "ecs_task_execution_role_arn" {
+#   description = "ARN of the ECS task execution role"
+#   value       = aws_iam_role.ecs_task_execution_role.arn
+# }
 
-output "ecs_task_role_arn" {
-  description = "ARN of the ECS task role for application runtime"
-  value       = aws_iam_role.ecs_task_role.arn
-}
+# output "ecs_task_role_arn" {
+#   description = "ARN of the ECS task role for application runtime"
+#   value       = aws_iam_role.ecs_task_role.arn
+# }
 
-output "lambda_execution_role_arn" {
-  description = "ARN of the Lambda execution role"
-  value       = aws_iam_role.lambda_execution_role.arn
-}
+# output "lambda_execution_role_arn" {
+#   description = "ARN of the Lambda execution role"
+#   value       = aws_iam_role.lambda_execution_role.arn
+# }
 
-output "ec2_instance_profile_name" {
-  description = "Name of the EC2 instance profile"
-  value       = aws_iam_instance_profile.ec2_instance_profile.name
-}
+# output "ec2_instance_profile_name" {
+#   description = "Name of the EC2 instance profile"
+#   value       = aws_iam_instance_profile.ec2_instance_profile.name
+# }
 
-output "ec2_instance_role_arn" {
-  description = "ARN of the EC2 instance role"
-  value       = aws_iam_role.ec2_instance_role.arn
-}
+# output "ec2_instance_role_arn" {
+#   description = "ARN of the EC2 instance role"
+#   value       = aws_iam_role.ec2_instance_role.arn
+# }
 
-output "github_actions_role_arn" {
-  description = "ARN of the GitHub Actions role for CI/CD"
-  value       = aws_iam_role.github_actions_role.arn
-  sensitive   = true
-}
+# GitHub Actions role output - commented out due to IAM permissions
+# output "github_actions_role_arn" {
+#   description = "ARN of the GitHub Actions role for CI/CD"
+#   value       = aws_iam_role.github_actions_role.arn
+#   sensitive   = true
+# }
 
-output "iam_roles_summary" {
-  description = "Summary of all IAM roles created for secure access"
-  value = {
-    ecs_task_execution_role = aws_iam_role.ecs_task_execution_role.name
-    ecs_task_role           = aws_iam_role.ecs_task_role.name
-    lambda_execution_role   = aws_iam_role.lambda_execution_role.name
-    ec2_instance_role       = aws_iam_role.ec2_instance_role.name
-    github_actions_role     = aws_iam_role.github_actions_role.name
-  }
-}
+# output "iam_roles_summary" {
+#   description = "Summary of all IAM roles created for secure access"
+#   value = {
+#     ecs_task_execution_role = aws_iam_role.ecs_task_execution_role.name
+#     ecs_task_role           = aws_iam_role.ecs_task_role.name
+#     lambda_execution_role   = aws_iam_role.lambda_execution_role.name
+#     ec2_instance_role       = aws_iam_role.ec2_instance_role.name
+#     # github_actions_role     = aws_iam_role.github_actions_role.name
+#   }
+# }

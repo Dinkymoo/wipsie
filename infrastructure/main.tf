@@ -142,27 +142,27 @@ resource "aws_subnet" "database" {
   }
 }
 
-# Elastic IPs for NAT Gateways
+# Elastic IPs for NAT Gateway (single for cost optimization)
 resource "aws_eip" "nat" {
-  count = length(aws_subnet.public)
+  count = var.enable_nat_gateway ? 1 : 0
 
   domain = "vpc"
   depends_on = [aws_internet_gateway.main]
 
   tags = {
-    Name = "${var.project_name}-eip-nat-${count.index + 1}-${var.environment}"
+    Name = "${var.project_name}-eip-nat-${var.environment}"
   }
 }
 
-# NAT Gateways
+# NAT Gateway (single for cost optimization)
 resource "aws_nat_gateway" "main" {
-  count = length(aws_subnet.public)
+  count = var.enable_nat_gateway ? 1 : 0
 
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name = "${var.project_name}-nat-${count.index + 1}-${var.environment}"
+    Name = "${var.project_name}-nat-${var.environment}"
   }
 
   depends_on = [aws_internet_gateway.main]
@@ -182,19 +182,19 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Route tables for private subnets
+# Route table for private subnets (single table routing to single NAT Gateway)
 resource "aws_route_table" "private" {
-  count = length(aws_nat_gateway.main)
+  count = var.enable_nat_gateway ? 1 : 0
 
   vpc_id = aws_vpc.main.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
+    nat_gateway_id = aws_nat_gateway.main[0].id
   }
 
   tags = {
-    Name = "${var.project_name}-private-rt-${count.index + 1}-${var.environment}"
+    Name = "${var.project_name}-private-rt-${var.environment}"
   }
 }
 
@@ -216,10 +216,10 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_route_table_association" "private" {
-  count = length(aws_subnet.private)
+  count = var.enable_nat_gateway ? length(aws_subnet.private) : 0
 
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  route_table_id = aws_route_table.private[0].id
 }
 
 resource "aws_route_table_association" "database" {
@@ -447,93 +447,95 @@ resource "aws_cloudwatch_log_group" "ecs" {
 }
 
 # ECS Task Definition
-resource "aws_ecs_task_definition" "backend" {
-  family                   = "${var.project_name}-backend-${var.environment}"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = 512
-  memory                   = 1024
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_role.arn
+# Commented out due to IAM role dependencies
+# resource "aws_ecs_task_definition" "backend" {
+#   family                   = "${var.project_name}-backend-${var.environment}"
+#   requires_compatibilities = ["FARGATE"]
+#   network_mode             = "awsvpc"
+#   cpu                      = 512
+#   memory                   = 1024
+#   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn           = aws_iam_role.ecs_task_role.arn
 
-  container_definitions = jsonencode([
-    {
-      name  = "backend"
-      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.project_name}-backend:latest"
+#   container_definitions = jsonencode([
+#     {
+#       name  = "backend"
+#       image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.project_name}-backend:latest"
       
-      portMappings = [
-        {
-          containerPort = 8000
-          protocol      = "tcp"
-        }
-      ]
+#       portMappings = [
+#         {
+#           containerPort = 8000
+#           protocol      = "tcp"
+#         }
+#       ]
 
-      environment = [
-        {
-          name  = "ENVIRONMENT"
-          value = var.environment
-        },
-        {
-          name  = "DATABASE_URL"
-          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
-        },
-        {
-          name  = "REDIS_URL"
-          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
-        }
-      ]
+#       environment = [
+#         {
+#           name  = "ENVIRONMENT"
+#           value = var.environment
+#         },
+#         {
+#           name  = "DATABASE_URL"
+#           value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+#         },
+#         {
+#           name  = "REDIS_URL"
+#           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
+#         }
+#       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
+#       logConfiguration = {
+#         logDriver = "awslogs"
+#         options = {
+#           "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+#           "awslogs-region"        = var.aws_region
+#           "awslogs-stream-prefix" = "ecs"
+#         }
+#       }
 
-      essential = true
-    }
-  ])
+#       essential = true
+#     }
+#   ])
 
-  tags = {
-    Name = "${var.project_name}-backend-task-${var.environment}"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-backend-task-${var.environment}"
+#   }
+# }
 
 # ECS Service
-resource "aws_ecs_service" "backend" {
-  name            = "${var.project_name}-backend-${var.environment}"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = var.environment == "production" ? 2 : 1
+# Commented out due to IAM role dependencies
+# resource "aws_ecs_service" "backend" {
+#   name            = "${var.project_name}-backend-${var.environment}"
+#   cluster         = aws_ecs_cluster.main.id
+#   task_definition = aws_ecs_task_definition.backend.arn
+#   desired_count   = var.environment == "production" ? 2 : 1
 
-  capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    weight            = 100
-  }
+#   capacity_provider_strategy {
+#     capacity_provider = "FARGATE"
+#     weight            = 100
+#   }
 
-  network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
-  }
+#   network_configuration {
+#     subnets          = aws_subnet.private[*].id
+#     security_groups  = [aws_security_group.ecs.id]
+#     assign_public_ip = false
+#   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.ecs.arn
-    container_name   = "backend"
-    container_port   = 8000
-  }
+#   load_balancer {
+#     target_group_arn = aws_lb_target_group.ecs.arn
+#     container_name   = "backend"
+#     container_port   = 8000
+#   }
 
-  depends_on = [
-    aws_lb_listener.main,
-    aws_iam_role_policy_attachment.ecs_task_execution_role_policy
-  ]
+#   depends_on = [
+#     aws_lb_listener.main,
+#     aws_iam_role_policy_attachment.ecs_task_execution_role_policy
+#   ]
 
-  tags = {
-    Name = "${var.project_name}-backend-service-${var.environment}"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-backend-service-${var.environment}"
+#   }
+# }
 #
 # 4. SERVERLESS
 #    - Lambda functions for background processing
@@ -606,463 +608,478 @@ output "debug_info" {
 # ====================================================================
 # Role for ECS Fargate tasks to pull container images and write logs
 
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${local.name_prefix}-ecs-task-execution"
+# IAM Role for ECS Task Execution
+# Commented out due to IAM permissions - aws-admin user cannot create roles
+# resource "aws_iam_role" "ecs_task_execution_role" {
+#   name = "${var.project_name}-${var.environment}-ecs-task-execution"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "ecs-tasks.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
 
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-ecs-task-execution"
-    Component = "ECS"
-    Purpose   = "Task Execution"
-  })
-}
+#   tags = merge(var.common_tags, {
+#     Name      = "${var.project_name}-${var.environment}-ecs-task-execution"
+#     Component = "ECS"
+#     Purpose   = "Task Execution"
+#     CreatedBy = data.aws_caller_identity.current.user_id
+#   })
+# }
 
 # Attach AWS managed policy for ECS task execution
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+#   role       = aws_iam_role.ecs_task_execution_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+# }
 
 # Additional policy for accessing Secrets Manager and Parameter Store
-resource "aws_iam_role_policy" "ecs_task_execution_additional" {
-  name = "${local.name_prefix}-ecs-task-execution-additional"
-  role = aws_iam_role.ecs_task_execution_role.id
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy" "ecs_task_execution_additional" {
+#   name = "${local.name_prefix}-ecs-task-execution-additional"
+#   role = aws_iam_role.ecs_task_execution_role.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "ssm:GetParameters",
-          "ssm:GetParameter",
-          "ssm:GetParametersByPath",
-          "kms:Decrypt"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*",
-          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*",
-          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
-        ]
-      }
-    ]
-  })
-}
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           "secretsmanager:GetSecretValue",
+#           "ssm:GetParameters",
+#           "ssm:GetParameter",
+#           "ssm:GetParametersByPath",
+#           "kms:Decrypt"
+#         ]
+#         Resource = [
+#           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*",
+#           "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*",
+#           "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 # ====================================================================
 # ECS TASK ROLE (for application runtime)
 # ====================================================================
 # Role for the actual application running in ECS tasks
+# Commented out due to IAM permissions
 
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${local.name_prefix}-ecs-task"
+# resource "aws_iam_role" "ecs_task_role" {
+#   name = "${local.name_prefix}-ecs-task"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "ecs-tasks.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
 
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-ecs-task"
-    Component = "ECS"
-    Purpose   = "Application Runtime"
-  })
-}
+#   tags = merge(local.common_tags, {
+#     Name      = "${local.name_prefix}-ecs-task"
+#     Component = "ECS"
+#     Purpose   = "Application Runtime"
+#   })
+# }
 
 # Policy for ECS tasks to access AWS services needed by the application
-resource "aws_iam_role_policy" "ecs_task_policy" {
-  name = "${local.name_prefix}-ecs-task-policy"
-  role = aws_iam_role.ecs_task_role.id
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy" "ecs_task_policy" {
+#   name = "${local.name_prefix}-ecs-task-policy"
+#   role = aws_iam_role.ecs_task_role.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          # SQS permissions for message processing
-          "sqs:ReceiveMessage",
-          "sqs:SendMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl"
-        ]
-        Resource = [
-          "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # S3 permissions for file storage
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "arn:aws:s3:::${var.project_name}-${var.environment}-*",
-          "arn:aws:s3:::${var.project_name}-${var.environment}-*/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # Lambda invocation for background processing
-          "lambda:InvokeFunction"
-        ]
-        Resource = [
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # Secrets Manager access for database credentials
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
-        ]
-      }
-    ]
-  })
-}
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # SQS permissions for message processing
+#           "sqs:ReceiveMessage",
+#           "sqs:SendMessage",
+#           "sqs:DeleteMessage",
+#           "sqs:GetQueueAttributes",
+#           "sqs:GetQueueUrl"
+#         ]
+#         Resource = [
+#           "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # S3 permissions for file storage
+#           "s3:GetObject",
+#           "s3:PutObject",
+#           "s3:DeleteObject",
+#           "s3:ListBucket"
+#         ]
+#         Resource = [
+#           "arn:aws:s3:::${var.project_name}-${var.environment}-*",
+#           "arn:aws:s3:::${var.project_name}-${var.environment}-*/*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Lambda invocation for background processing
+#           "lambda:InvokeFunction"
+#         ]
+#         Resource = [
+#           "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Secrets Manager access for database credentials
+#           "secretsmanager:GetSecretValue"
+#         ]
+#         Resource = [
+#           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 # ====================================================================
 # LAMBDA EXECUTION ROLES
 # ====================================================================
 # Roles for Lambda functions with specific permissions
+# Commented out due to IAM permissions
 
-resource "aws_iam_role" "lambda_execution_role" {
-  name = "${local.name_prefix}-lambda-execution"
+# resource "aws_iam_role" "lambda_execution_role" {
+#   name = "${local.name_prefix}-lambda-execution"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "lambda.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
 
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-lambda-execution"
-    Component = "Lambda"
-    Purpose   = "Function Execution"
-  })
-}
+#   tags = merge(local.common_tags, {
+#     Name      = "${local.name_prefix}-lambda-execution"
+#     Component = "Lambda"
+#     Purpose   = "Function Execution"
+#   })
+# }
 
 # Attach AWS managed policy for Lambda basic execution
-resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
-  role       = aws_iam_role.lambda_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+#   role       = aws_iam_role.lambda_execution_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+# }
 
 # Custom policy for Lambda functions
-resource "aws_iam_role_policy" "lambda_custom_policy" {
-  name = "${local.name_prefix}-lambda-custom"
-  role = aws_iam_role.lambda_execution_role.id
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy" "lambda_custom_policy" {
+#   name = "${local.name_prefix}-lambda-custom"
+#   role = aws_iam_role.lambda_execution_role.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          # VPC permissions for Lambda in VPC
-          "ec2:CreateNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DeleteNetworkInterface"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # SQS permissions for Lambda triggers and processing
-          "sqs:ReceiveMessage",
-          "sqs:SendMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl"
-        ]
-        Resource = [
-          "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # RDS Data API permissions (if using serverless RDS)
-          "rds-data:ExecuteStatement",
-          "rds-data:BatchExecuteStatement",
-          "rds-data:BeginTransaction",
-          "rds-data:CommitTransaction",
-          "rds-data:RollbackTransaction"
-        ]
-        Resource = [
-          "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster:${var.project_name}-*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # Secrets Manager for database credentials
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # S3 permissions for data processing
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          "arn:aws:s3:::${var.project_name}-${var.environment}-*/*"
-        ]
-      }
-    ]
-  })
-}
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # VPC permissions for Lambda in VPC
+#           "ec2:CreateNetworkInterface",
+#           "ec2:DescribeNetworkInterfaces",
+#           "ec2:DeleteNetworkInterface"
+#         ]
+#         Resource = "*"
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # SQS permissions for Lambda triggers and processing
+#           "sqs:ReceiveMessage",
+#           "sqs:SendMessage",
+#           "sqs:DeleteMessage",
+#           "sqs:GetQueueAttributes",
+#           "sqs:GetQueueUrl"
+#         ]
+#         Resource = [
+#           "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # RDS Data API permissions (if using serverless RDS)
+#           "rds-data:ExecuteStatement",
+#           "rds-data:BatchExecuteStatement",
+#           "rds-data:BeginTransaction",
+#           "rds-data:CommitTransaction",
+#           "rds-data:RollbackTransaction"
+#         ]
+#         Resource = [
+#           "arn:aws:rds:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster:${var.project_name}-*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Secrets Manager for database credentials
+#           "secretsmanager:GetSecretValue"
+#         ]
+#         Resource = [
+#           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # S3 permissions for data processing
+#           "s3:GetObject",
+#           "s3:PutObject",
+#           "s3:DeleteObject"
+#         ]
+#         Resource = [
+#           "arn:aws:s3:::${var.project_name}-${var.environment}-*/*"
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 # ====================================================================
 # EC2 INSTANCE PROFILE (if using EC2 instances)
 # ====================================================================
 # Role for EC2 instances to access AWS services
+# Commented out due to IAM permissions
 
-resource "aws_iam_role" "ec2_instance_role" {
-  name = "${local.name_prefix}-ec2-instance"
+# resource "aws_iam_role" "ec2_instance_role" {
+#   name = "${local.name_prefix}-ec2-instance"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "ec2.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
 
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-ec2-instance"
-    Component = "EC2"
-    Purpose   = "Instance Profile"
-  })
-}
+#   tags = merge(local.common_tags, {
+#     Name      = "${local.name_prefix}-ec2-instance"
+#     Component = "EC2"
+#     Purpose   = "Instance Profile"
+#   })
+# }
 
 # Instance profile for EC2
-resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "${local.name_prefix}-ec2-instance"
-  role = aws_iam_role.ec2_instance_role.name
+# Commented out due to IAM permissions
+# resource "aws_iam_instance_profile" "ec2_instance_profile" {
+#   name = "${local.name_prefix}-ec2-instance"
+#   role = aws_iam_role.ec2_instance_role.name
 
-  tags = local.common_tags
-}
+#   tags = local.common_tags
+# }
 
 # Policy for EC2 instances
-resource "aws_iam_role_policy" "ec2_instance_policy" {
-  name = "${local.name_prefix}-ec2-instance-policy"
-  role = aws_iam_role.ec2_instance_role.id
+# Commented out due to IAM permissions
+# resource "aws_iam_role_policy" "ec2_instance_policy" {
+#   name = "${local.name_prefix}-ec2-instance-policy"
+#   role = aws_iam_role.ec2_instance_role.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          # CloudWatch for monitoring and logging
-          "cloudwatch:PutMetricData",
-          "cloudwatch:GetMetricStatistics",
-          "cloudwatch:ListMetrics",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogStreams"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # Systems Manager for parameter store
-          "ssm:GetParameter",
-          "ssm:GetParameters",
-          "ssm:GetParametersByPath"
-        ]
-        Resource = [
-          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          # Secrets Manager access
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
-        ]
-      }
-    ]
-  })
-}
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # CloudWatch for monitoring and logging
+#           "cloudwatch:PutMetricData",
+#           "cloudwatch:GetMetricStatistics",
+#           "cloudwatch:ListMetrics",
+#           "logs:CreateLogGroup",
+#           "logs:CreateLogStream",
+#           "logs:PutLogEvents",
+#           "logs:DescribeLogStreams"
+#         ]
+#         Resource = "*"
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Systems Manager for parameter store
+#           "ssm:GetParameter",
+#           "ssm:GetParameters",
+#           "ssm:GetParametersByPath"
+#         ]
+#         Resource = [
+#           "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*"
+#         ]
+#       },
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Secrets Manager access
+#           "secretsmanager:GetSecretValue"
+#         ]
+#         Resource = [
+#           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 # ====================================================================
 # GITHUB ACTIONS OIDC ROLE (for CI/CD)
 # ====================================================================
 # Role for GitHub Actions to deploy infrastructure securely
 
-# OIDC Provider for GitHub Actions
-resource "aws_iam_openid_connect_provider" "github_actions" {
-  url = "https://token.actions.githubusercontent.com"
+# OIDC Provider for GitHub Actions - COMMENTED OUT DUE TO IAM PERMISSIONS
+# resource "aws_iam_openid_connect_provider" "github_actions" {
+#   url = "https://token.actions.githubusercontent.com"
+# 
+#   client_id_list = [
+#     "sts.amazonaws.com",
+#   ]
+# 
+#   thumbprint_list = [
+#     "6938fd4d98bab03faadb97b34396831e3780aea1",
+#     "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+#   ]
+# 
+#   tags = merge(local.common_tags, {
+#     Name      = "${local.name_prefix}-github-oidc"
+#     Component = "CI/CD"
+#     Purpose   = "GitHub Actions OIDC"
+#   })
+# }
 
-  client_id_list = [
-    "sts.amazonaws.com",
-  ]
+# Role for GitHub Actions - COMMENTED OUT DUE TO IAM PERMISSIONS  
+# resource "aws_iam_role" "github_actions_role" {
+#   name = "${local.name_prefix}-github-actions"
+# 
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           Federated = aws_iam_openid_connect_provider.github_actions.arn
+#         }
+#         Action = "sts:AssumeRoleWithWebIdentity"
+#         Condition = {
+#           StringEquals = {
+#             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+#           }
+#           StringLike = {
+#             "token.actions.githubusercontent.com:sub" = "repo:Dinkymoo/learn-work:*"
+#           }
+#         }
+#       }
+#     ]
+#   })
+# 
+#   tags = merge(local.common_tags, {
+#     Name      = "${local.name_prefix}-github-actions"
+#     Component = "CI/CD"
+#     Purpose   = "GitHub Actions Deployment"
+#   })
+# }
+# 
+# # Policy for GitHub Actions deployment - COMMENTED OUT
+# resource "aws_iam_role_policy" "github_actions_policy" {
+#   name = "${local.name_prefix}-github-actions-policy"
+#   role = aws_iam_role.github_actions_role.id
 
-  thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1",
-    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
-  ]
-
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-github-oidc"
-    Component = "CI/CD"
-    Purpose   = "GitHub Actions OIDC"
-  })
-}
-
-# Role for GitHub Actions
-resource "aws_iam_role" "github_actions_role" {
-  name = "${local.name_prefix}-github-actions"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = aws_iam_openid_connect_provider.github_actions.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:Dinkymoo/learn-work:*"
-          }
-        }
-      }
-    ]
-  })
-
-  tags = merge(local.common_tags, {
-    Name      = "${local.name_prefix}-github-actions"
-    Component = "CI/CD"
-    Purpose   = "GitHub Actions Deployment"
-  })
-}
-
-# Policy for GitHub Actions deployment
-resource "aws_iam_role_policy" "github_actions_policy" {
-  name = "${local.name_prefix}-github-actions-policy"
-  role = aws_iam_role.github_actions_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          # Full access for infrastructure deployment
-          "iam:*",
-          "ec2:*",
-          "ecs:*",
-          "rds:*",
-          "lambda:*",
-          "s3:*",
-          "sqs:*",
-          "secretsmanager:*",
-          "ssm:*",
-          "cloudformation:*",
-          "cloudwatch:*",
-          "logs:*"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.aws_region
-          }
-        }
-      }
-    ]
-  })
-}
+# 
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           # Full access for infrastructure deployment
+#           "iam:*",
+#           "ec2:*",
+#           "ecs:*",
+#           "rds:*",
+#           "lambda:*",
+#           "s3:*",
+#           "sqs:*",
+#           "secretsmanager:*",
+#           "ssm:*",
+#           "cloudformation:*",
+#           "cloudwatch:*",
+#           "logs:*"
+#         ]
+#         Resource = "*"
+#         Condition = {
+#           StringEquals = {
+#             "aws:RequestedRegion" = var.aws_region
+#           }
+#         }
+#       }
+#     ]
+#   })
+# }
 
 # ====================================================================
-# RDS MONITORING ROLE
+# RDS MONITORING ROLE - COMMENTED OUT DUE TO IAM PERMISSIONS
 # ====================================================================
+# Uncomment when aws-admin user gets PowerUserAccess policy
 
-# RDS Enhanced Monitoring Role
-resource "aws_iam_role" "rds_monitoring" {
-  name = "${var.project_name}-rds-monitoring-${var.environment}"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "monitoring.rds.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-rds-monitoring-${var.environment}"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
-}
+# # RDS Enhanced Monitoring Role
+# resource "aws_iam_role" "rds_monitoring" {
+#   name = "${var.project_name}-rds-monitoring-${var.environment}"
+# 
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "monitoring.rds.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
+# 
+#   tags = {
+#     Name = "${var.project_name}-rds-monitoring-${var.environment}"
+#   }
+# }
+# 
+# resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+#   role       = aws_iam_role.rds_monitoring.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+# }
 
 # ====================================================================
 # DATABASE INFRASTRUCTURE
@@ -1104,7 +1121,7 @@ resource "aws_db_instance" "main" {
 
   # Engine Configuration
   engine         = "postgres"
-  engine_version = "15.4"
+  engine_version = "15.12"
   instance_class = var.environment == "production" ? "db.t3.medium" : "db.t3.micro"
 
   # Database Configuration
@@ -1133,8 +1150,8 @@ resource "aws_db_instance" "main" {
 
   # Performance and Monitoring
   performance_insights_enabled = true
-  monitoring_interval         = 60
-  monitoring_role_arn        = aws_iam_role.rds_monitoring.arn
+  monitoring_interval         = 0  # Disabled due to IAM permissions
+  # monitoring_role_arn        = aws_iam_role.rds_monitoring.arn
 
   # Parameter Group
   parameter_group_name = aws_db_parameter_group.main.name
@@ -1160,7 +1177,7 @@ resource "aws_elasticache_subnet_group" "main" {
 
 # ElastiCache Parameter Group
 resource "aws_elasticache_parameter_group" "main" {
-  family = "redis7.x"
+  family = "redis6.x"
   name   = "${var.project_name}-cache-params-${var.environment}"
 
   parameter {
@@ -1179,6 +1196,7 @@ resource "aws_elasticache_replication_group" "main" {
   description                = "Redis cache for ${var.project_name} ${var.environment}"
 
   # Node Configuration
+  engine_version     = "6.2"
   node_type          = var.environment == "production" ? "cache.t3.medium" : "cache.t3.micro"
   port               = 6379
   parameter_group_name = aws_elasticache_parameter_group.main.name
@@ -1190,10 +1208,10 @@ resource "aws_elasticache_replication_group" "main" {
   subnet_group_name  = aws_elasticache_subnet_group.main.name
   security_group_ids = [aws_security_group.redis.id]
 
-  # Security
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
-  auth_token                 = var.redis_auth_token
+  # Security - Simplified for staging
+  at_rest_encryption_enabled = false
+  transit_encryption_enabled = false
+  # auth_token                 = var.redis_auth_token  # Disabled for simplicity
 
   # Backup Configuration
   snapshot_retention_limit = var.environment == "production" ? 5 : 1
@@ -1261,76 +1279,78 @@ resource "aws_cloudwatch_log_group" "task_processor" {
 }
 
 # Lambda Function: Data Poller
-resource "aws_lambda_function" "data_poller" {
-  function_name = "${var.project_name}-data-poller-${var.environment}"
-  role         = aws_iam_role.lambda_execution_role.arn
-  handler      = "data_poller.lambda_handler"
-  runtime      = "python3.11"
-  timeout      = 300
+# Commented out due to IAM role dependencies
+# resource "aws_lambda_function" "data_poller" {
+#   function_name = "${var.project_name}-data-poller-${var.environment}"
+#   role         = aws_iam_role.lambda_execution_role.arn
+#   handler      = "data_poller.lambda_handler"
+#   runtime      = "python3.11"
+#   timeout      = 300
 
-  # Deployment package (will be updated via CI/CD)
-  filename         = "${path.module}/../aws-lambda/packages/data_poller.zip"
-  source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/data_poller.zip")
+#   # Deployment package (will be updated via CI/CD)
+#   filename         = "${path.module}/../aws-lambda/packages/data_poller.zip"
+#   source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/data_poller.zip")
 
-  vpc_config {
-    subnet_ids         = aws_subnet.private[*].id
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+#   vpc_config {
+#     subnet_ids         = aws_subnet.private[*].id
+#     security_group_ids = [aws_security_group.lambda.id]
+#   }
 
-  environment {
-    variables = {
-      ENVIRONMENT     = var.environment
-      DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
-      BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
-      SQS_QUEUE_URL   = aws_sqs_queue.task_queue.url
-    }
-  }
+#   environment {
+#     variables = {
+#       ENVIRONMENT     = var.environment
+#       DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+#       BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
+#       SQS_QUEUE_URL   = aws_sqs_queue.task_queue.url
+#     }
+#   }
 
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic_execution,
-    aws_cloudwatch_log_group.data_poller
-  ]
+#   depends_on = [
+#     aws_iam_role_policy_attachment.lambda_basic_execution,
+#     aws_cloudwatch_log_group.data_poller
+#   ]
 
-  tags = {
-    Name = "${var.project_name}-data-poller-${var.environment}"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-data-poller-${var.environment}"
+#   }
+# }
 
 # Lambda Function: Task Processor
-resource "aws_lambda_function" "task_processor" {
-  function_name = "${var.project_name}-task-processor-${var.environment}"
-  role         = aws_iam_role.lambda_execution_role.arn
-  handler      = "task_processor.lambda_handler"
-  runtime      = "python3.11"
-  timeout      = 900
+# Commented out due to IAM role dependencies
+# resource "aws_lambda_function" "task_processor" {
+#   function_name = "${var.project_name}-task-processor-${var.environment}"
+#   role         = aws_iam_role.lambda_execution_role.arn
+#   handler      = "task_processor.lambda_handler"
+#   runtime      = "python3.11"
+#   timeout      = 900
 
-  # Deployment package (will be updated via CI/CD)
-  filename         = "${path.module}/../aws-lambda/packages/task_processor.zip"
-  source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/task_processor.zip")
+#   # Deployment package (will be updated via CI/CD)
+#   filename         = "${path.module}/../aws-lambda/packages/task_processor.zip"
+#   source_code_hash = filebase64sha256("${path.module}/../aws-lambda/packages/task_processor.zip")
 
-  vpc_config {
-    subnet_ids         = aws_subnet.private[*].id
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+#   vpc_config {
+#     subnet_ids         = aws_subnet.private[*].id
+#     security_group_ids = [aws_security_group.lambda.id]
+#   }
 
-  environment {
-    variables = {
-      ENVIRONMENT     = var.environment
-      DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
-      BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
-      REDIS_URL       = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
-    }
-  }
+#   environment {
+#     variables = {
+#       ENVIRONMENT     = var.environment
+#       DATABASE_URL    = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/${var.db_name}"
+#       BACKEND_API_URL = "http://${aws_lb.main.dns_name}"
+#       REDIS_URL       = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379"
+#     }
+#   }
 
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic_execution,
-    aws_cloudwatch_log_group.task_processor
-  ]
+#   depends_on = [
+#     aws_iam_role_policy_attachment.lambda_basic_execution,
+#     aws_cloudwatch_log_group.task_processor
+#   ]
 
-  tags = {
-    Name = "${var.project_name}-task-processor-${var.environment}"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-task-processor-${var.environment}"
+#   }
+# }
 
 # ====================================================================
 # SQS QUEUES
@@ -1369,11 +1389,12 @@ resource "aws_sqs_queue" "task_dlq" {
 }
 
 # SQS Event Source Mapping for Task Processor
-resource "aws_lambda_event_source_mapping" "task_processor" {
-  event_source_arn = aws_sqs_queue.task_queue.arn
-  function_name    = aws_lambda_function.task_processor.arn
-  batch_size       = 10
-}
+# Commented out due to Lambda function dependencies
+# resource "aws_lambda_event_source_mapping" "task_processor" {
+#   event_source_arn = aws_sqs_queue.task_queue.arn
+#   function_name    = aws_lambda_function.task_processor.arn
+#   batch_size       = 10
+# }
 
 # EventBridge Rule for Data Poller (runs every 15 minutes)
 resource "aws_cloudwatch_event_rule" "data_poller" {
@@ -1387,20 +1408,22 @@ resource "aws_cloudwatch_event_rule" "data_poller" {
 }
 
 # EventBridge Target for Data Poller
-resource "aws_cloudwatch_event_target" "data_poller" {
-  rule      = aws_cloudwatch_event_rule.data_poller.name
-  target_id = "DataPollerTarget"
-  arn       = aws_lambda_function.data_poller.arn
-}
+# Commented out due to Lambda function dependencies
+# resource "aws_cloudwatch_event_target" "data_poller" {
+#   rule      = aws_cloudwatch_event_rule.data_poller.name
+#   target_id = "DataPollerTarget"
+#   arn       = aws_lambda_function.data_poller.arn
+# }
 
 # Lambda Permission for EventBridge
-resource "aws_lambda_permission" "allow_eventbridge" {
-  statement_id  = "AllowExecutionFromEventBridge"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.data_poller.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.data_poller.arn
-}
+# Commented out due to Lambda function dependencies
+# resource "aws_lambda_permission" "allow_eventbridge" {
+#   statement_id  = "AllowExecutionFromEventBridge"
+#   action        = "lambda:InvokeFunction"
+#   function_name = aws_lambda_function.data_poller.function_name
+#   principal     = "events.amazonaws.com"
+#   source_arn    = aws_cloudwatch_event_rule.data_poller.arn
+# }
 
 # ====================================================================
 # S3 AND CLOUDFRONT

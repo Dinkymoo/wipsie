@@ -57,7 +57,7 @@ variable "vpc_cidr" {
 }
 
 variable "enable_nat_gateway" {
-  description = "Enable NAT Gateway for private subnets (required for Lambda and private resources)"
+  description = "Enable NAT Gateway for private subnets (single NAT for cost optimization - ~$45/month vs ~$135/month for multi-AZ)"
   type        = bool
   default     = true
 }

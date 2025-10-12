@@ -57,9 +57,9 @@ variable "vpc_cidr" {
 }
 
 variable "enable_nat_gateway" {
-  description = "Enable NAT Gateway for private subnets (single NAT for cost optimization - ~$45/month vs ~$135/month for multi-AZ)"
+  description = "Enable NAT Gateway for private subnets (~$45/month). For learning: disable and use public subnets only to save $45/month"
   type        = bool
-  default     = true
+  default     = false  # Changed to false for maximum cost savings
 }
 
 # ====================================================================
@@ -183,4 +183,32 @@ variable "ecs_task_memory" {
   description = "Memory for ECS tasks"
   type        = number
   default     = 512
+}
+
+# ====================================================================
+# COST OPTIMIZATION VARIABLES (for learning environment)
+# ====================================================================
+
+variable "enable_rds" {
+  description = "Enable RDS PostgreSQL database (~$13/month). For learning, you can use SQLite or containerized PostgreSQL"
+  type        = bool
+  default     = true
+}
+
+variable "enable_redis" {
+  description = "Enable ElastiCache Redis (~$12/month). For learning, you can use in-memory caching or containerized Redis"
+  type        = bool
+  default     = true
+}
+
+variable "enable_alb" {
+  description = "Enable Application Load Balancer (~$16/month). For learning, you can use simple EC2 instance or direct ECS access"
+  type        = bool
+  default     = true
+}
+
+variable "enable_cloudfront" {
+  description = "Enable CloudFront CDN (~$1-5/month). For learning, you can serve directly from S3"
+  type        = bool
+  default     = true
 }

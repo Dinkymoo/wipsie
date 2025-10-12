@@ -350,6 +350,7 @@ resource "aws_security_group" "lambda" {
 
 # Application Load Balancer
 resource "aws_lb" "main" {
+  count              = var.enable_alb ? 1 : 0
   name               = "${var.project_name}-alb-${var.environment}"
   internal           = false
   load_balancer_type = "application"
@@ -365,6 +366,7 @@ resource "aws_lb" "main" {
 
 # Target Group for ECS Service
 resource "aws_lb_target_group" "ecs" {
+  count    = var.enable_alb ? 1 : 0
   name     = "${var.project_name}-ecs-tg-${var.environment}"
   port     = 8000
   protocol = "HTTP"
@@ -391,13 +393,14 @@ resource "aws_lb_target_group" "ecs" {
 
 # ALB Listener
 resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
+  count             = var.enable_alb ? 1 : 0
+  load_balancer_arn = aws_lb.main[0].arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.ecs.arn
+    target_group_arn = aws_lb_target_group.ecs[0].arn
   }
 
   tags = {
@@ -1167,6 +1170,7 @@ resource "aws_db_instance" "main" {
 
 # ElastiCache Subnet Group
 resource "aws_elasticache_subnet_group" "main" {
+  count      = var.enable_redis ? 1 : 0
   name       = "${var.project_name}-cache-subnet-group-${var.environment}"
   subnet_ids = aws_subnet.database[*].id
 
@@ -1177,6 +1181,7 @@ resource "aws_elasticache_subnet_group" "main" {
 
 # ElastiCache Parameter Group
 resource "aws_elasticache_parameter_group" "main" {
+  count  = var.enable_redis ? 1 : 0
   family = "redis6.x"
   name   = "${var.project_name}-cache-params-${var.environment}"
 
@@ -1192,6 +1197,7 @@ resource "aws_elasticache_parameter_group" "main" {
 
 # ElastiCache Replication Group (Redis)
 resource "aws_elasticache_replication_group" "main" {
+  count                      = var.enable_redis ? 1 : 0
   replication_group_id       = "${var.project_name}-cache-${var.environment}-${random_id.redis_suffix.hex}"
   description                = "Redis cache for ${var.project_name} ${var.environment}"
 
@@ -1199,13 +1205,13 @@ resource "aws_elasticache_replication_group" "main" {
   engine_version     = "6.2"
   node_type          = var.environment == "production" ? "cache.t3.medium" : "cache.t3.micro"
   port               = 6379
-  parameter_group_name = aws_elasticache_parameter_group.main.name
+  parameter_group_name = aws_elasticache_parameter_group.main[0].name
 
   # Replication Configuration
   num_cache_clusters = var.environment == "production" ? 2 : 1
 
   # Network Configuration
-  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  subnet_group_name  = aws_elasticache_subnet_group.main[0].name
   security_group_ids = [aws_security_group.redis.id]
 
   # Security - Simplified for staging
@@ -1457,6 +1463,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend" {
 
 # S3 Bucket Policy for CloudFront
 resource "aws_s3_bucket_policy" "frontend" {
+  count  = var.enable_cloudfront ? 1 : 0
   bucket = aws_s3_bucket.frontend.id
 
   policy = jsonencode({
@@ -1466,7 +1473,7 @@ resource "aws_s3_bucket_policy" "frontend" {
         Sid       = "AllowCloudFrontAccess"
         Effect    = "Allow"
         Principal = {
-          AWS = aws_cloudfront_origin_access_identity.main.iam_arn
+          AWS = aws_cloudfront_origin_access_identity.main[0].iam_arn
         }
         Action   = "s3:GetObject"
         Resource = "${aws_s3_bucket.frontend.arn}/*"
@@ -1477,17 +1484,20 @@ resource "aws_s3_bucket_policy" "frontend" {
 
 # CloudFront Origin Access Identity
 resource "aws_cloudfront_origin_access_identity" "main" {
+  count   = var.enable_cloudfront ? 1 : 0
   comment = "OAI for ${var.project_name} ${var.environment}"
 }
 
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "main" {
+  count = var.enable_cloudfront ? 1 : 0
+  
   origin {
     domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_id   = "S3-${aws_s3_bucket.frontend.bucket}"
 
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.main.cloudfront_access_identity_path
+      origin_access_identity = aws_cloudfront_origin_access_identity.main[0].cloudfront_access_identity_path
     }
   }
 
@@ -1514,41 +1524,12 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl     = 86400
   }
 
-  # Cache behavior for API calls
-  ordered_cache_behavior {
-    path_pattern     = "/api/*"
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "ALB-${aws_lb.main.name}"
-    compress         = true
-
-    forwarded_values {
-      query_string = true
-      headers      = ["*"]
-      cookies {
-        forward = "all"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl               = 0
-    default_ttl           = 0
-    max_ttl               = 0
-  }
-
-  # Add ALB as origin for API requests
-  origin {
-    domain_name = aws_lb.main.dns_name
-    origin_id   = "ALB-${aws_lb.main.name}"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
+  # API cache behavior removed when ALB disabled
+  # All requests now go to S3 static content only
+  
+  # ALB origin removed for cost optimization
+  # When ALB is disabled, CloudFront only serves static content from S3
+  
   restrictions {
     geo_restriction {
       restriction_type = "none"

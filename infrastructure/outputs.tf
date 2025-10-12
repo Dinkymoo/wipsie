@@ -87,13 +87,13 @@ output "ecs_cluster_arn" {
 }
 
 output "application_load_balancer_dns" {
-  description = "DNS name of the Application Load Balancer"
-  value       = aws_lb.main.dns_name
+  description = "DNS name of the Application Load Balancer (empty if ALB disabled)"
+  value       = var.enable_alb ? aws_lb.main[0].dns_name : ""
 }
 
 output "application_load_balancer_arn" {
-  description = "ARN of the Application Load Balancer"
-  value       = aws_lb.main.arn
+  description = "ARN of the Application Load Balancer (empty if ALB disabled)"
+  value       = var.enable_alb ? aws_lb.main[0].arn : ""
 }
 
 # output "ecs_service_name" {
@@ -117,8 +117,8 @@ output "rds_database_name" {
 }
 
 output "redis_endpoint" {
-  description = "Redis cluster primary endpoint"
-  value       = aws_elasticache_replication_group.main.primary_endpoint_address
+  description = "Redis cluster primary endpoint (empty if Redis disabled)"
+  value       = var.enable_redis ? aws_elasticache_replication_group.main[0].primary_endpoint_address : ""
   sensitive   = true
 }
 
@@ -195,13 +195,13 @@ output "s3_lambda_deployments_bucket" {
 }
 
 output "cloudfront_distribution_id" {
-  description = "ID of the CloudFront distribution"
-  value       = aws_cloudfront_distribution.main.id
+  description = "ID of the CloudFront distribution (empty if CloudFront disabled)"
+  value       = var.enable_cloudfront ? aws_cloudfront_distribution.main[0].id : ""
 }
 
 output "cloudfront_domain_name" {
-  description = "Domain name of the CloudFront distribution"
-  value       = aws_cloudfront_distribution.main.domain_name
+  description = "Domain name of the CloudFront distribution (empty if CloudFront disabled)"
+  value       = var.enable_cloudfront ? aws_cloudfront_distribution.main[0].domain_name : ""
 }
 
 output "secrets_manager_arn" {

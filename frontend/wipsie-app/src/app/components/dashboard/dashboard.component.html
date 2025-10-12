@@ -1,0 +1,97 @@
+<div class="dashboard">
+  <h1>Wipsie Dashboard</h1>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <p>Loading data from backend...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="refreshData()" class="refresh-btn">Retry</button>
+  </div>
+  
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error" class="dashboard-content">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">
+        <h3>Users</h3>
+        <div class="card-number">{{ users.length }}</div>
+      </div>
+      <div class="card">
+        <h3>Tasks</h3>
+        <div class="card-number">{{ tasks.length }}</div>
+      </div>
+      <div class="card">
+        <h3>Data Points</h3>
+        <div class="card-number">{{ dataPoints.length }}</div>
+      </div>
+    </div>
+    
+    <!-- Tasks by Status -->
+    <div class="task-status-section">
+      <h2>Tasks by Status</h2>
+      <div class="status-cards">
+        <div class="status-card todo">
+          <h4>To Do</h4>
+          <span>{{ getTasksByStatus('todo').length }}</span>
+        </div>
+        <div class="status-card in-progress">
+          <h4>In Progress</h4>
+          <span>{{ getTasksByStatus('in_progress').length }}</span>
+        </div>
+        <div class="status-card done">
+          <h4>Done</h4>
+          <span>{{ getTasksByStatus('done').length }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Users List -->
+    <div class="users-section">
+      <h2>Users</h2>
+      <div class="user-cards">
+        <div *ngFor="let user of users" class="user-card">
+          <h4>{{ user.username }}</h4>
+          <p>{{ user.email }}</p>
+          <span class="task-count">{{ getUserTaskCount(user.id) }} tasks</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Recent Tasks -->
+    <div class="tasks-section">
+      <h2>Recent Tasks</h2>
+      <div class="task-list">
+        <div *ngFor="let task of tasks.slice(0, 10)" class="task-item">
+          <div class="task-info">
+            <h4>{{ task.title }}</h4>
+            <p>{{ task.description }}</p>
+          </div>
+          <div class="task-meta">
+            <span class="status" [ngClass]="task.status">{{ task.status }}</span>
+            <span class="priority">Priority: {{ task.priority }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Data Points Sample -->
+    <div class="data-points-section">
+      <h2>Data Points Sample</h2>
+      <div class="data-point-types">
+        <div *ngFor="let type of ['completion_rate', 'time_spent', 'server_metrics']" class="data-type-card">
+          <h4>{{ type }}</h4>
+          <span>{{ getDataPointsByType(type).length }} records</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Refresh Button -->
+    <div class="actions">
+      <button (click)="refreshData()" class="refresh-btn">Refresh Data</button>
+    </div>
+  </div>
+</div>

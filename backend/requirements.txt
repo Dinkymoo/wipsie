@@ -29,6 +29,10 @@ passlib[bcrypt]==1.7.4
 # Environment and configuration
 python-dotenv==1.0.0
 
+# Testing and data factories
+factory-boy==3.3.0
+faker==20.1.0
+
 # Monitoring and logging
 structlog==23.2.0
 

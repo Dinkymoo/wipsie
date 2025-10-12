@@ -11,6 +11,7 @@ from fastapi.responses import (
 )
 
 from backend.api.endpoints import (
+    database,
     sqs,
 )
 
@@ -63,4 +64,5 @@ async def root():
     }
 
 # Include routers
+app.include_router(database.router)
 app.include_router(sqs.router)

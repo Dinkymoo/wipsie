@@ -65,6 +65,32 @@ get_database_status() {
         return
     fi
     
+    # Check Aurora clusters
+    AURORA_COUNT=$(terraform show -json 2>/dev/null | jq -r '.values.root_module.resources[] | select(.type=="aws_rds_cluster") | .address' | wc -l || echo "0")
+    
+    if [[ $AURORA_COUNT -gt 0 ]]; then
+        echo "☁️  Aurora Clusters: $AURORA_COUNT ACTIVE"
+        
+        # Get Aurora cluster details
+        terraform show -json 2>/dev/null | jq -r '.values.root_module.resources[] | select(.type=="aws_rds_cluster") | "   " + .values.cluster_identifier + " (Engine: " + .values.engine + ")"' 2>/dev/null || echo "   Unable to get cluster details"
+        
+        AURORA_SERVERLESS=$(terraform show -json 2>/dev/null | jq -r '.values.root_module.resources[] | select(.type=="aws_rds_cluster") | select(.values.serverlessv2_scaling_configuration != null) | .address' | wc -l || echo "0")
+        
+        if [[ $AURORA_SERVERLESS -gt 0 ]]; then
+            echo "   Type: Serverless v2"
+            echo "   Estimated Cost: \$15-30/month per cluster"
+        else
+            echo "   Type: Provisioned"
+            echo "   Estimated Cost: \$50-100/month per cluster"
+        fi
+        
+        # Warning about multiple clusters
+        if [[ $AURORA_COUNT -gt 1 ]]; then
+            echo "   ⚠️  WARNING: Multiple clusters detected - consider consolidating"
+            echo "   💰 Potential savings: \$15-30/month by removing duplicates"
+        fi
+    fi
+    
     # Check RDS instances
     RDS_COUNT=$(terraform show -json 2>/dev/null | jq -r '.values.root_module.resources[] | select(.type=="aws_db_instance") | .address' | wc -l || echo "0")
     
@@ -89,8 +115,10 @@ get_database_status() {
                 echo "   Estimated Cost: Check AWS calculator"
                 ;;
         esac
-    else
-        echo "🗄️  RDS Database: NOT ACTIVE"
+    fi
+    
+    if [[ $AURORA_COUNT -eq 0 && $RDS_COUNT -eq 0 ]]; then
+        echo "🗄️  AWS Databases: NOT ACTIVE"
     fi
     
     # Check containerized database
@@ -133,9 +161,10 @@ show_optimization_tips() {
     print_section "💡 Cost Optimization Tips"
     
     echo "1. 🗄️  Database Optimization:"
+    echo "   • Aurora Serverless v2: \$15-30/month (current setup)"
+    echo "   • Remove duplicate clusters: Save \$15-30/month"
     echo "   • Ultra-Budget: Use SQLite (\$0/month)"
     echo "   • Learning: Use containerized PostgreSQL (\$1-5/month)"
-    echo "   • Production: Use minimal RDS (\$12-15/month)"
     echo ""
     echo "2. 🚀 Compute Optimization:"
     echo "   • Use Fargate Spot pricing (70% savings)"
@@ -143,9 +172,9 @@ show_optimization_tips() {
     echo "   • Use smallest instance sizes for learning"
     echo ""
     echo "3. 🔧 Quick Actions:"
-    echo "   • Run: ./scripts/database-cost-optimizer.sh"
-    echo "   • Stop all: ./scripts/stop-all-services.sh"
-    echo "   • Start learning: ./scripts/start-learning-environment.sh"
+    echo "   • Remove duplicate clusters: ./scripts/enable-cluster-deletion.sh"
+    echo "   • Database mode switch: ./scripts/database-cost-optimizer.sh"
+    echo "   • Stop all services: ./scripts/stop-all-services.sh"
 }
 
 show_quick_commands() {

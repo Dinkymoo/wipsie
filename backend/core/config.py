@@ -22,8 +22,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres@db:5432/wipsie_db"
+    # Database - Aurora PostgreSQL
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql://postgres:WipsieAurora2024!@"
+        "wipsie-learning-aurora.cluster-cijy0iuu8o42.us-east-1."
+        "rds.amazonaws.com:5432/wipsie"
+    )
 
     # Redis (Optional - keeping for caching if needed)
     REDIS_URL: str = "redis://redis:6379"

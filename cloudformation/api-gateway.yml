@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Wipsie API Gateway for Lambda Backend'
+
+Parameters:
+  LambdaFunctionName:
+    Type: String
+    Default: wipsie-backend
+    Description: Name of the Lambda function to integrate with
+  
+  LambdaFunctionArn:
+    Type: String
+    Default: arn:aws:lambda:eu-west-1:554510949034:function:wipsie-backend
+    Description: ARN of the Lambda function
+
+Resources:
+  # API Gateway REST API
+  WipsieApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: wipsie-api
+      Description: Wipsie Backend API Gateway
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Policy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: execute-api:Invoke
+            Resource: '*'
+
+  # Proxy Resource for catching all paths
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref WipsieApi
+      ParentId: !GetAtt WipsieApi.RootResourceId
+      PathPart: '{proxy+}'
+
+  # ANY method on proxy resource
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref WipsieApi
+      ResourceId: !Ref ProxyResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations'
+
+  # ANY method on root resource
+  RootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref WipsieApi
+      ResourceId: !GetAtt WipsieApi.RootResourceId
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations'
+
+  # Lambda permission for API Gateway
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub '${WipsieApi}/*/*'
+
+  # API Gateway Deployment
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProxyMethod
+      - RootMethod
+    Properties:
+      RestApiId: !Ref WipsieApi
+      StageName: prod
+      Description: Production deployment for Wipsie API
+
+Outputs:
+  ApiUrl:
+    Description: URL of the API Gateway
+    Value: !Sub 'https://${WipsieApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+  
+  ApiId:
+    Description: ID of the API Gateway
+    Value: !Ref WipsieApi
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiId'

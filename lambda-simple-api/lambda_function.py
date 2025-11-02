@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import urllib.parse
 from datetime import (
     datetime,
 )
@@ -27,7 +26,8 @@ def lambda_handler(event, context):
     if body:
         try:
             request_body = json.loads(body)
-        except:
+        except (json.JSONDecodeError, TypeError, ValueError):
+            # If body is not valid JSON or is an unexpected type, keep original string/value
             request_body = body
 
     try:
@@ -70,17 +70,26 @@ def get_db_connection():
 
     # For now, return a mock connection status
     # We'll implement actual psycopg2 connection next
+    host = "unknown"
+    if "@" in database_url:
+        host = database_url.split("@")[1].split(":")[0]
     return {
         "status": "configured",
         "url_set": True,
-        "host": database_url.split("@")[1].split(":")[0] if "@" in database_url else "unknown"
+        "host": host
     }
 
 
 def handle_health(method):
     """Health check endpoint with database status"""
     if method != 'GET':
-        return create_response(405, {"error": "Method not allowed", "allowed": ["GET"]})
+        return create_response(
+            405,
+            {
+                "error": "Method not allowed",
+                "allowed": ["GET"],
+            },
+        )
 
     try:
         db_status = get_db_connection()
@@ -232,7 +241,10 @@ def create_response(status_code, body):
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers': (
+                'Content-Type, Authorization,'
+                ' X-Requested-With'
+            ),
             'X-API-Version': '1.1.0',
             'X-Timestamp': datetime.utcnow().isoformat() + 'Z'
         },

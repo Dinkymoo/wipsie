@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import datetime
-from mangum import Mangum
 
 app = FastAPI(
     title="Wipsie Full Stack API",
@@ -147,5 +146,20 @@ async def get_task_status(task_id: str):
         "completed_at": datetime.datetime.now()
     }
 
-# Create the Lambda handler
-lambda_handler = Mangum(app, lifespan="off")
+# Lambda handler for AWS Lambda
+def lambda_handler(event, context):
+    """AWS Lambda handler using Mangum"""
+    try:
+        from mangum import Mangum
+        handler = Mangum(app, lifespan="off")
+        return handler(event, context)
+    except ImportError:
+        return {
+            "statusCode": 500,
+            "body": '{"error": "Mangum not installed"}'
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f'{{"error": "Lambda handler error: {str(e)}"}}'
+        }

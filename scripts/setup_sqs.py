@@ -9,7 +9,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
-from backend.core.config import settings
+from core.config import settings
 
 
 def create_sqs_queues():

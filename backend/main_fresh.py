@@ -2,7 +2,7 @@ from fastapi import (
     FastAPI,
 )
 
-from backend.api.endpoints import (
+from api.endpoints import (
     database,
 )
 

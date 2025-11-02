@@ -5,10 +5,10 @@ from fastapi import (
     HTTPException,
 )
 
-from backend.schemas.schemas import (
+from schemas.schemas import (
     MessageResponse,
 )
-from backend.services.lambda_service import (
+from services.lambda_service import (
     LambdaService,
 )
 

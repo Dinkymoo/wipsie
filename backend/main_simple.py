@@ -10,7 +10,7 @@ from fastapi.responses import (
     JSONResponse,
 )
 
-from backend.api.endpoints import (
+from api.endpoints import (
     database,
 )
 

@@ -16,7 +16,7 @@ from sqlalchemy.sql import (
     func,
 )
 
-from backend.db.database import (
+from db.database import (
     Base,
 )
 

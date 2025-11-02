@@ -4,13 +4,13 @@ Database population script using SQLAlchemy factories.
 Populates the Aurora PostgreSQL database with realistic test data.
 """
 
-from backend.models.models import (
+from models.models import (
     Base,
 )
-from backend.factories import (
+from factories import (
     create_complete_dataset,
 )
-from backend.db.database import (
+from db.database import (
     SessionLocal,
     engine,
 )

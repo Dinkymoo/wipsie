@@ -18,11 +18,11 @@ from sqlalchemy.pool import (
     StaticPool,
 )
 
-from backend.db.database import (
+from db.database import (
     Base,
     get_db,
 )
-from backend.main import (
+from main import (
     app,
 )
 

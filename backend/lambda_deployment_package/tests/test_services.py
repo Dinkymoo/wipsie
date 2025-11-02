@@ -11,7 +11,7 @@ class TestUserService:
     def test_user_service_import(self):
         """Test that user service can be imported."""
         try:
-            from backend.services.user_service import (
+            from services.user_service import (
                 UserService,
             )
 
@@ -22,7 +22,7 @@ class TestUserService:
     def test_user_service_basic_functionality(self):
         """Test basic user service functionality if available."""
         try:
-            from backend.services.user_service import (
+            from services.user_service import (
                 UserService,
             )
 
@@ -40,7 +40,7 @@ class TestTaskService:
     def test_task_service_import(self):
         """Test that task service can be imported."""
         try:
-            from backend.services.task_service import (
+            from services.task_service import (
                 TaskService,
             )
 
@@ -51,7 +51,7 @@ class TestTaskService:
     def test_task_service_basic_functionality(self):
         """Test basic task service functionality if available."""
         try:
-            from backend.services.task_service import (
+            from services.task_service import (
                 TaskService,
             )
 
@@ -69,7 +69,7 @@ class TestDataPointService:
     def test_data_point_service_import(self):
         """Test that data point service can be imported."""
         try:
-            from backend.services.data_point_service import (
+            from services.data_point_service import (
                 DataPointService,
             )
 
@@ -80,7 +80,7 @@ class TestDataPointService:
     def test_data_point_service_basic_functionality(self):
         """Test basic data point service functionality if available."""
         try:
-            from backend.services.data_point_service import (
+            from services.data_point_service import (
                 DataPointService,
             )
 
@@ -98,7 +98,7 @@ class TestLambdaService:
     def test_lambda_service_import(self):
         """Test that Lambda service can be imported."""
         try:
-            from backend.services.lambda_service import (
+            from services.lambda_service import (
                 LambdaService,
             )
 
@@ -109,7 +109,7 @@ class TestLambdaService:
     def test_lambda_service_basic_functionality(self):
         """Test basic Lambda service functionality if available."""
         try:
-            from backend.services.lambda_service import (
+            from services.lambda_service import (
                 LambdaService,
             )
 
@@ -127,7 +127,7 @@ class TestCeleryTasks:
     def test_tasks_import(self):
         """Test that tasks module can be imported."""
         try:
-            from backend.services import (
+            from services import (
                 tasks,
             )
 
@@ -138,7 +138,7 @@ class TestCeleryTasks:
     def test_celery_app_import(self):
         """Test that Celery app can be imported."""
         try:
-            from backend.core.celery_app import (
+            from core.celery_app import (
                 celery_app,
             )
 
@@ -186,7 +186,7 @@ class TestServiceIntegration:
     def test_schema_integration(self):
         """Test that services integrate with schemas."""
         try:
-            from backend.schemas import (
+            from schemas import (
                 schemas,
             )
 

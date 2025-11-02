@@ -22,10 +22,10 @@ from faker import (
     Faker,
 )
 
-from backend.db.database import (
+from db.database import (
     SessionLocal,
 )
-from backend.models.models import (
+from models.models import (
     DataPoint,
     Task,
     User,

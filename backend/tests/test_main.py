@@ -51,7 +51,7 @@ class TestBasicFunctionality:
 
     def test_app_imports(self):
         """Test that we can import the main app."""
-        from backend.main import (
+        from main import (
             app,
         )
 
@@ -60,7 +60,7 @@ class TestBasicFunctionality:
     def test_database_models_import(self):
         """Test that we can import database models."""
         try:
-            from backend.models import models  # noqa: F401
+            from models import models  # noqa: F401
 
             # This might not exist yet, so we'll make it optional
             assert True
@@ -71,7 +71,7 @@ class TestBasicFunctionality:
     def test_database_connection_import(self):
         """Test that we can import database configuration."""
         try:
-            from backend.db.database import (
+            from db.database import (
                 get_db,
             )
 

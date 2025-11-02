@@ -17,7 +17,7 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.db.database import (
+from db.database import (
     SessionLocal,
 )
 

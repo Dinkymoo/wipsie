@@ -20,7 +20,7 @@ print(
 
 # Test basic imports
 try:
-    from backend.core.config import settings
+    from core.config import settings
 
     print(f"✅ Settings loaded - Region: {settings.AWS_REGION}")
     print(f"✅ SQS Queue Prefix: {settings.SQS_QUEUE_PREFIX}")
@@ -52,7 +52,7 @@ except Exception as e:
 
 # Test actual app import
 try:
-    from backend.core.celery_app import celery_app
+    from core.celery_app import celery_app
 
     print("✅ Celery app imported successfully")
     print(f"✅ App broker: {celery_app.conf.broker_url}")

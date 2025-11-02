@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 def start_worker():
     """Start the Celery worker"""
     # Import after path setup
-    from backend.workers import celery_app
+    from workers import celery_app
 
     print("🚀 Starting Wipsie Celery Worker...")
     print("📋 Available Queues:")

@@ -11,10 +11,10 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.models.models import (
+from models.models import (
     User,
 )
-from backend.schemas.schemas import (
+from schemas.schemas import (
     UserCreate,
     UserUpdate,
 )

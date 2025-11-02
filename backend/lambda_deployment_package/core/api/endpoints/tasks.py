@@ -12,15 +12,15 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.db.database import (
+from db.database import (
     get_db,
 )
-from backend.schemas.schemas import (
+from schemas.schemas import (
     Task,
     TaskCreate,
     TaskUpdate,
 )
-from backend.services.task_service import (
+from services.task_service import (
     TaskService,
 )
 

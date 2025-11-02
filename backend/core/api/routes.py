@@ -2,7 +2,7 @@ from fastapi import (
     APIRouter,
 )
 
-from backend.api.endpoints import (
+from api.endpoints import (
     data_points,
     lambda_functions,
     tasks,

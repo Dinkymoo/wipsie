@@ -2,7 +2,7 @@ from celery import (
     Celery,
 )
 
-from backend.core.config import (
+from core.config import (
     settings,
 )
 

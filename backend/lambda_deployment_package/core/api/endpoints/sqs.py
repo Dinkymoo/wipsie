@@ -16,7 +16,7 @@ from pydantic import (
     BaseModel,
 )
 
-from backend.services.aws.sqs.service import (
+from services.aws.sqs.service import (
     sqs_service,
 )
 

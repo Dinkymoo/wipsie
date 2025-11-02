@@ -25,7 +25,7 @@
             "PolicyArn": "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
         },
         {
-            "PolicyName": "AmazonSQSFullAccess",
+            "PolicyName": "AmazonSQSFullAcce``ss",
             "PolicyArn": "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
         },
         {

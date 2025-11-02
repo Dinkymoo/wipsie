@@ -10,9 +10,9 @@ from urllib.parse import quote_plus
 
 from celery import Celery
 
-from backend.core.config import settings
-from backend.services.aws.ses.service import ses_service
-from backend.services.aws.sqs.service import sqs_service
+from core.config import settings
+from services.aws.ses.service import ses_service
+from services.aws.sqs.service import sqs_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

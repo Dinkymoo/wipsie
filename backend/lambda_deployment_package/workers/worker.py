@@ -9,7 +9,7 @@ from pathlib import (
     Path,
 )
 
-from backend.workers.celery_app import (
+from workers.celery_app import (
     app,
 )
 
@@ -19,10 +19,10 @@ sys.path.insert(0, str(project_root))
 
 
 # Import all task modules to register them
-from backend.workers.tasks import data_processing  # noqa: F401
-from backend.workers.tasks import email  # noqa: F401
-from backend.workers.tasks import general  # noqa: F401
-from backend.workers.tasks import notifications  # noqa: F401
+from workers.tasks import data_processing  # noqa: F401
+from workers.tasks import email  # noqa: F401
+from workers.tasks import general  # noqa: F401
+from workers.tasks import notifications  # noqa: F401
 
 if __name__ == "__main__":
     # Start the worker

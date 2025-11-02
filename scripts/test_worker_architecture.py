@@ -17,23 +17,23 @@ def test_worker_imports():
     print("🧪 Testing Worker Imports...")
 
     try:
-        from backend.workers import celery_app
+        from workers import celery_app
 
         print("✅ Celery app imported successfully")
 
-        from backend.workers.tasks import data_processing
+        from workers.tasks import data_processing
 
         print("✅ Data processing tasks imported")
 
-        from backend.workers.tasks import general
+        from workers.tasks import general
 
         print("✅ General tasks imported")
 
-        from backend.workers.tasks import email
+        from workers.tasks import email
 
         print("✅ Email tasks imported")
 
-        from backend.workers.tasks import notifications
+        from workers.tasks import notifications
 
         print("✅ Notification tasks imported")
 
@@ -49,7 +49,7 @@ def test_task_registration():
     print("\n📋 Testing Task Registration...")
 
     try:
-        from backend.workers import celery_app
+        from workers import celery_app
 
         # Get registered tasks
         registered_tasks = list(celery_app.tasks.keys())
@@ -93,7 +93,7 @@ def test_queue_configuration():
     print("\n🔧 Testing Queue Configuration...")
 
     try:
-        from backend.workers import celery_app
+        from workers import celery_app
 
         # Check broker configuration
         broker_url = celery_app.conf.broker_url

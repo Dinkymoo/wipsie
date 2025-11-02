@@ -46,7 +46,7 @@ class TestDatabaseConfiguration:
     def test_database_import(self):
         """Test that we can import database modules."""
         try:
-            from backend.db.database import (
+            from db.database import (
                 engine,
                 get_db,
             )
@@ -59,7 +59,7 @@ class TestDatabaseConfiguration:
     def test_models_import(self):
         """Test that we can import model modules."""
         try:
-            from backend.models.models import (
+            from models.models import (
                 Base,
             )
 

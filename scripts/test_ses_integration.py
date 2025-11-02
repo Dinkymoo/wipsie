@@ -12,10 +12,10 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_path))
 
-from backend.core.config import settings  # noqa: E402
+from core.config import settings  # noqa: E402
 
 # Now import after path is set
-from backend.services.aws.ses.service import SESService  # noqa: E402
+from services.aws.ses.service import SESService  # noqa: E402
 
 
 def test_ses_configuration():

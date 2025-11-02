@@ -18,15 +18,15 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.db.database import (
+from db.database import (
     get_db,
 )
-from backend.models.models import (
+from models.models import (
     DataPoint,
     Task,
     User,
 )
-from backend.schemas.aurora_schemas import (
+from schemas.aurora_schemas import (
     DataPointCreate,
     DataPointResponse,
     TaskCreate,
@@ -204,10 +204,20 @@ async def get_user_stats(db: Session = Depends(get_db)):
         func.count(Task.id).label("count")
     ).group_by(Task.status).all()
 
+    # stats can be None if the query returned no rows; provide safe defaults
+    if not stats:
+        total_users = 0
+        total_tasks = 0
+        total_data_points = 0
+    else:
+        total_users = stats.total_users or 0
+        total_tasks = stats.total_tasks or 0
+        total_data_points = stats.total_data_points or 0
+
     return {
-        "total_users": stats.total_users,
-        "total_tasks": stats.total_tasks,
-        "total_data_points": stats.total_data_points,
+        "total_users": total_users,
+        "total_tasks": total_tasks,
+        "total_data_points": total_data_points,
         "tasks_by_status": [
             {"status": stat.status, "count": stat.count}
             for stat in task_stats
@@ -219,8 +229,6 @@ async def get_user_stats(db: Session = Depends(get_db)):
 async def get_task_completion_data(db: Session = Depends(get_db)):
     """Get task completion analytics from data points."""
     from sqlalchemy import (
-        and_,
-        func,
         text,
     )
 

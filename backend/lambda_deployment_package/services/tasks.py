@@ -8,10 +8,10 @@ from celery import (
     current_task,
 )
 
-from backend.core.celery_app import (
+from core.celery_app import (
     celery_app,
 )
-from backend.services.lambda_service import (
+from services.lambda_service import (
     LambdaService,
 )
 

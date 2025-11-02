@@ -11,7 +11,7 @@ from sqlalchemy import (
     pool,
 )
 
-from backend.models.models import (
+from models.models import (
     Base,
 )
 

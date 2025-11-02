@@ -18,15 +18,15 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.db.database import (
+from db.database import (
     get_db,
 )
-from backend.models.models import (
+from models.models import (
     DataPoint,
     Task,
     User,
 )
-from backend.schemas.aurora_schemas import (
+from schemas.aurora_schemas import (
     DataPointCreate,
     DataPointResponse,
     TaskCreate,

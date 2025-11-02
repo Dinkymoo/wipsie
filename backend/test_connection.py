@@ -3,10 +3,10 @@
 Quick test script to verify Aurora PostgreSQL connection.
 """
 
-from backend.db.database import (
+from db.database import (
     engine,
 )
-from backend.core.config import (
+from core.config import (
     settings,
 )
 import sys

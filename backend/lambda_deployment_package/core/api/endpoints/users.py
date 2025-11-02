@@ -12,15 +12,15 @@ from sqlalchemy.orm import (
     Session,
 )
 
-from backend.db.database import (
+from db.database import (
     get_db,
 )
-from backend.schemas.schemas import (
+from schemas.schemas import (
     User,
     UserCreate,
     UserUpdate,
 )
-from backend.services.user_service import (
+from services.user_service import (
     UserService,
 )
 

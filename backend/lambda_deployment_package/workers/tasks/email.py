@@ -8,7 +8,7 @@ from datetime import (
     datetime,
 )
 
-from backend.services.aws.ses.service import (
+from services.aws.ses.service import (
     ses_service,
 )
 

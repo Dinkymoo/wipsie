@@ -8,7 +8,7 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 
-from backend.core.config import (
+from core.config import (
     settings,
 )
 

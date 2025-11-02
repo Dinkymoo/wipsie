@@ -15,7 +15,7 @@ from typing import (
 
 import boto3
 
-from backend.core.config import (
+from core.config import (
     settings,
 )
 

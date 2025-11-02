@@ -1,0 +1,14 @@
+Wipsie Backend API Details
+=========================
+Lambda Function: wipsie-backend
+API Gateway ID: 6noncsau7b
+API Gateway URL: https://6noncsau7b.execute-api.eu-west-1.amazonaws.com/prod
+
+Test Commands:
+curl -s "https://6noncsau7b.execute-api.eu-west-1.amazonaws.com/prod/health"
+curl -s "https://6noncsau7b.execute-api.eu-west-1.amazonaws.com/prod/"
+curl -s "https://6noncsau7b.execute-api.eu-west-1.amazonaws.com/prod/data-points"
+
+Environment: Production
+Region: eu-west-1
+Created: Sun Nov  2 20:29:28 UTC 2025

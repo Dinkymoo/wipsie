@@ -8,7 +8,7 @@ set -e
 # Configuration
 PROJECT_NAME="wipsie"
 ENVIRONMENT=${1:-dev}
-AWS_REGION=${2:-us-east-1}
+AWS_REGION=${2:-eu-west-1}
 STACK_NAME="${PROJECT_NAME}-${ENVIRONMENT}-lambda"
 
 # Colors for output

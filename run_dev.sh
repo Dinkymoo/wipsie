@@ -72,23 +72,46 @@ check_prerequisites() {
 setup_python_env() {
     echo -e "${YELLOW}🐍 Setting up Python environment...${NC}"
     
-    # Create virtual environment if it doesn't exist
-    if [ ! -d ".venv" ]; then
-        echo -e "${BLUE}📦 Creating virtual environment...${NC}"
-        python3 -m venv .venv
+    # Check for existing virtual environments
+    local venv_path=""
+    if [ -d "venv_container" ]; then
+        venv_path="venv_container"
+        echo -e "${BLUE}📦 Found existing virtual environment: venv_container${NC}"
+    elif [ -d ".venv" ]; then
+        venv_path=".venv"
+        echo -e "${BLUE}📦 Found existing virtual environment: .venv${NC}"
+    else
+        echo -e "${BLUE}📦 Creating new virtual environment...${NC}"
+        python3 -m venv venv_container
+        venv_path="venv_container"
+    fi
+    
+    # Check if pip is working in the virtual environment
+    if [ -f "$venv_path/bin/pip" ]; then
+        echo -e "${BLUE}🔍 Testing pip installation...${NC}"
+        if ! "$venv_path/bin/pip" --version >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️  Pip is corrupted, recreating virtual environment...${NC}"
+            rm -rf "$venv_path"
+            python3 -m venv "$venv_path"
+        fi
     fi
     
     # Activate virtual environment
-    source .venv/bin/activate
+    source "$venv_path/bin/activate"
     
-    # Upgrade pip
-    pip install --upgrade pip
+    # Upgrade pip safely
+    echo -e "${BLUE}🔧 Upgrading pip...${NC}"
+    python -m pip install --upgrade pip
     
     # Install requirements
     if [ -f "requirements.txt" ]; then
         echo -e "${BLUE}📋 Installing Python dependencies...${NC}"
         pip install -r requirements.txt
     fi
+    
+    # Install additional dependencies for the project
+    echo -e "${BLUE}📦 Installing project dependencies...${NC}"
+    pip install fastapi uvicorn sqlalchemy alembic psycopg2-binary redis celery boto3 requests
     
     echo -e "${GREEN}✅ Python environment ready!${NC}"
 }
@@ -144,8 +167,19 @@ start_infrastructure() {
 start_backend() {
     echo -e "${YELLOW}🔧 Starting backend services...${NC}"
     
+    # Determine which virtual environment to use
+    local venv_path=""
+    if [ -d "venv_container" ]; then
+        venv_path="venv_container"
+    elif [ -d ".venv" ]; then
+        venv_path=".venv"
+    else
+        echo -e "${RED}❌ No virtual environment found. Run setup first.${NC}"
+        return 1
+    fi
+    
     # Activate Python environment
-    source .venv/bin/activate
+    source "$venv_path/bin/activate"
     
     # Start FastAPI server in background
     echo -e "${BLUE}🌐 Starting FastAPI server on port $BACKEND_PORT...${NC}"
@@ -212,8 +246,19 @@ show_services() {
 setup_dev_tools() {
     echo -e "${YELLOW}🛠️  Setting up development tools...${NC}"
     
+    # Determine which virtual environment to use
+    local venv_path=""
+    if [ -d "venv_container" ]; then
+        venv_path="venv_container"
+    elif [ -d ".venv" ]; then
+        venv_path=".venv"
+    else
+        echo -e "${RED}❌ No virtual environment found. Run setup first.${NC}"
+        return 1
+    fi
+    
     # Activate Python environment
-    source .venv/bin/activate
+    source "$venv_path/bin/activate"
     
     # Install development tools
     pip install black isort flake8 pytest pytest-asyncio
@@ -347,7 +392,7 @@ main() {
         "clean")
             echo -e "${YELLOW}🧹 Cleaning development environment...${NC}"
             docker-compose down -v
-            rm -rf .venv node_modules frontend/wipsie-app/node_modules
+            rm -rf .venv venv_container node_modules frontend/wipsie-app/node_modules
             echo -e "${GREEN}✅ Environment cleaned!${NC}"
             ;;
         

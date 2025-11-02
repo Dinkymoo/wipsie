@@ -1,0 +1,127 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "RDSFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "rds:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "EC2VPCFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IAMFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "iam:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CloudWatchFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:*",
+                "logs:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ECSFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "ecs:*",
+                "ecr:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "S3FullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "s3:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SQSFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "LambdaFullAccess",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CloudFormationAccess",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "EventsAccess",
+            "Effect": "Allow",
+            "Action": [
+                "events:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ElastiCacheAccess",
+            "Effect": "Allow",
+            "Action": [
+                "elasticache:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "CloudFrontAccess",
+            "Effect": "Allow",
+            "Action": [
+                "cloudfront:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SecretsManagerAccess",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ApplicationAutoScalingAccess",
+            "Effect": "Allow",
+            "Action": [
+                "application-autoscaling:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ServiceDiscoveryAccess",
+            "Effect": "Allow",
+            "Action": [
+                "servicediscovery:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

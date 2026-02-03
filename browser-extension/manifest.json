@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "description": "Keep track of the last 100 copied text items",
   "permissions": [
-    "storage",
-    "clipboardRead"
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"

@@ -83,7 +83,6 @@ To modify the extension:
 The extension requires the following permissions:
 
 - `storage`: To save clipboard history locally
-- `clipboardRead`: To read copied text (future feature)
 - `<all_urls>`: To run the content script on all websites
 
 ## Browser Compatibility

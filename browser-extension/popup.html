@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard History</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Clipboard History</h1>
+      <div class="header-actions">
+        <button id="clearBtn" class="btn btn-clear" title="Clear all history">
+          Clear All
+        </button>
+      </div>
+    </div>
+    
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Search clipboard history..." />
+    </div>
+    
+    <div id="historyCount" class="history-count">0 items</div>
+    
+    <div id="historyList" class="history-list">
+      <div class="empty-state">
+        <p>No clipboard history yet.</p>
+        <p class="empty-hint">Copy some text to get started!</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

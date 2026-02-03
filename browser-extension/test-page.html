@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page for Clipboard Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #0078d4;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .copyable {
+            background: #fff;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #0078d4;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Clipboard Extension Test Page</h1>
+    
+    <div class="instructions">
+        <h2>How to Test</h2>
+        <ol>
+            <li>Install the browser extension first (see README.md)</li>
+            <li>Select and copy (Ctrl+C) any text from the sections below</li>
+            <li>Click the extension icon in your toolbar</li>
+            <li>Verify that the copied text appears in the clipboard history</li>
+            <li>Try searching for specific text</li>
+            <li>Click an item to copy it back to clipboard</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 1: Short Quote</h3>
+        <div class="copyable">
+            The quick brown fox jumps over the lazy dog.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 2: Programming Code</h3>
+        <div class="copyable">
+function greet(name) {
+    console.log(`Hello, ${name}!`);
+}
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 3: Lorem Ipsum</h3>
+        <div class="copyable">
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 4: Technical Information</h3>
+        <div class="copyable">
+API Endpoint: https://api.example.com/v1/users
+Method: POST
+Headers: Content-Type: application/json
+Authorization: Bearer token123456
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 5: Email Template</h3>
+        <div class="copyable">
+Subject: Meeting Reminder
+Dear Team,
+This is a reminder about our meeting scheduled for tomorrow at 2 PM.
+Best regards,
+John Doe
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 6: Numbers and Symbols</h3>
+        <div class="copyable">
+Invoice #12345
+Total: $1,234.56
+Tax: $123.45
+Subtotal: $1,111.11
+Due Date: 2024-03-15
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 7: Unicode and Emojis</h3>
+        <div class="copyable">
+Hello 👋 World 🌍! Testing unicode: café, naïve, résumé ✨🎉🚀
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Text 8: Very Long Text</h3>
+        <div class="copyable">
+In the beginning, there was a simple idea: to create a tool that would help people manage their clipboard history. This idea grew into a full-fledged browser extension that tracks the last 100 items copied by users. The extension was designed with simplicity in mind, ensuring that users could easily access their clipboard history without any complicated setup. It features a clean, modern interface with search functionality, the ability to delete individual items, and a clear all button for when you want to start fresh. The extension respects user privacy by storing all data locally in the browser, never sending anything to external servers. This makes it a safe and reliable tool for everyday use. Whether you're a developer copying code snippets, a writer collecting research, or just someone who frequently needs to reference previously copied text, this extension has you covered.
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h2>Testing Checklist</h2>
+        <ul>
+            <li>✓ Copy multiple pieces of text from this page</li>
+            <li>✓ Verify all items appear in the extension popup</li>
+            <li>✓ Test the search functionality</li>
+            <li>✓ Click an item to copy it back to clipboard</li>
+            <li>✓ Delete individual items</li>
+            <li>✓ Clear all history</li>
+            <li>✓ Verify timestamps are displayed correctly</li>
+            <li>✓ Check that URLs are shown for each item</li>
+        </ul>
+    </div>
+</body>
+</html>

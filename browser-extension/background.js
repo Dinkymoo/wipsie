@@ -1,10 +1,36 @@
 // Background service worker to manage clipboard history
 const MAX_HISTORY_SIZE = 100;
 
-// Listen for messages from content scripts
+// Listen for messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'textCopied') {
     saveToHistory(message.text, message.url, message.timestamp);
+    return false; // No async response needed
+  }
+  
+  if (message.action === 'getHistory') {
+    chrome.storage.local.get(['clipboardHistory'], (result) => {
+      sendResponse({ history: result.clipboardHistory || [] });
+    });
+    return true; // Keep the message channel open for async response
+  }
+  
+  if (message.action === 'clearHistory') {
+    chrome.storage.local.set({ clipboardHistory: [] }, () => {
+      sendResponse({ success: true });
+    });
+    return true; // Keep the message channel open for async response
+  }
+  
+  if (message.action === 'deleteEntry') {
+    chrome.storage.local.get(['clipboardHistory'], (result) => {
+      let history = result.clipboardHistory || [];
+      history = history.filter(entry => entry.id !== message.id);
+      chrome.storage.local.set({ clipboardHistory: history }, () => {
+        sendResponse({ success: true });
+      });
+    });
+    return true; // Keep the message channel open for async response
   }
 });
 
@@ -15,12 +41,12 @@ async function saveToHistory(text, url, timestamp) {
     const result = await chrome.storage.local.get(['clipboardHistory']);
     let history = result.clipboardHistory || [];
     
-    // Create new history entry
+    // Create new history entry with unique ID
     const entry = {
       text: text,
       url: url,
       timestamp: timestamp,
-      id: Date.now() + Math.random() // Unique ID
+      id: crypto.randomUUID() // Unique ID
     };
     
     // Add to the beginning of the array
@@ -37,31 +63,3 @@ async function saveToHistory(text, url, timestamp) {
     console.error('Error saving to clipboard history:', error);
   }
 }
-
-// Listen for requests to get history
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'getHistory') {
-    chrome.storage.local.get(['clipboardHistory'], (result) => {
-      sendResponse({ history: result.clipboardHistory || [] });
-    });
-    return true; // Keep the message channel open for async response
-  }
-  
-  if (message.action === 'clearHistory') {
-    chrome.storage.local.set({ clipboardHistory: [] }, () => {
-      sendResponse({ success: true });
-    });
-    return true;
-  }
-  
-  if (message.action === 'deleteEntry') {
-    chrome.storage.local.get(['clipboardHistory'], (result) => {
-      let history = result.clipboardHistory || [];
-      history = history.filter(entry => entry.id !== message.id);
-      chrome.storage.local.set({ clipboardHistory: history }, () => {
-        sendResponse({ success: true });
-      });
-    });
-    return true;
-  }
-});
